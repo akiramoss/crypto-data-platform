@@ -1,8 +1,12 @@
 package com.crypto_data_platform.crypto_data_platform.domain;
 
 import jakarta.persistence.*;
+import lombok.*;
 
 @Entity
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class CryptoPrice {
 
     @Id
