@@ -13,7 +13,7 @@ public class CryptoApiClient {
 
     private static final String API_URL = "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd";
 
-    public CryptoApiResponse[] fetchCrytoData() {
+    public CryptoApiResponse[] fetchCryptoData() {
         return restTemplate.getForObject(API_URL, CryptoApiResponse[].class);
     }
 }

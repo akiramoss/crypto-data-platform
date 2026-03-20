@@ -1,5 +1,6 @@
 package com.crypto_data_platform.crypto_data_platform;
 
+import com.crypto_data_platform.crypto_data_platform.client.CryptoApiClient;
 import com.crypto_data_platform.crypto_data_platform.domain.CryptoPrice;
 import com.crypto_data_platform.crypto_data_platform.repository.CryptoRepository;
 import org.springframework.boot.CommandLineRunner;
@@ -27,6 +28,16 @@ public class CryptoDataPlatformApplication {
             repo.save(btc);
 
             System.out.println("DATA INSERTED");
+        };
+    }
+
+    @Bean
+    CommandLineRunner testAPI(CryptoApiClient client) {
+        return args -> {
+            var data = client.fetchCryptoData();
+
+            System.out.println("DATA FROM API:");
+            System.out.println(data[0].getSymbol());
         };
     }
 }
