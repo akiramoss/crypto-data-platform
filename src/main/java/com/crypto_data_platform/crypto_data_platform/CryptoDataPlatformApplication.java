@@ -3,6 +3,7 @@ package com.crypto_data_platform.crypto_data_platform;
 import com.crypto_data_platform.crypto_data_platform.client.CryptoApiClient;
 import com.crypto_data_platform.crypto_data_platform.domain.CryptoPrice;
 import com.crypto_data_platform.crypto_data_platform.repository.CryptoRepository;
+import com.crypto_data_platform.crypto_data_platform.service.CryptoService;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -31,6 +32,7 @@ public class CryptoDataPlatformApplication {
         };
     }
 
+    /*
     @Bean
     CommandLineRunner testAPI(CryptoApiClient client) {
         return args -> {
@@ -38,6 +40,15 @@ public class CryptoDataPlatformApplication {
 
             System.out.println("DATA FROM API:");
             System.out.println(data[0].getSymbol());
+        };
+    }
+     */
+
+    @Bean
+    CommandLineRunner run(CryptoService service) {
+        return args -> {
+            service.fetchAndSaveCryptoData();
+            System.out.println("CRYPTO DATA SAVED");
         };
     }
 }
