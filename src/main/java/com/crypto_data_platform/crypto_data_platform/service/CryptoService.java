@@ -14,6 +14,7 @@ public class CryptoService {
 
     private final CryptoApiClient apiClient;
     private final CryptoRepository repository;
+    private final List<CryptoPrice> entities = new ArrayList<>();
 
     public CryptoService(CryptoApiClient apiClient, CryptoRepository repository) {
         this.apiClient = apiClient;
@@ -21,30 +22,32 @@ public class CryptoService {
     }
 
     public void fetchAndSaveCryptoData() {
-        CryptoApiResponse[] response = apiClient.fetchCryptoData();
+        try {
+            CryptoApiResponse[] response = apiClient.fetchCryptoData();
 
-        System.out.println("Fetched " + response.length + " records from API");
+            System.out.println("Fetched " + response.length + " records from API");
 
-        List<CryptoPrice> entities = new ArrayList<>();
+            for (CryptoApiResponse dto : response) {
 
-        for (CryptoApiResponse dto : response) {
+                // Evitar duplicados
+                if (repository.existsBySymbol(dto.getSymbol())) {
+                    continue;
+                }
 
-            // Evitar duplicados
-            if (repository.existsBySymbol(dto.getSymbol())) {
-                continue;
+                CryptoPrice entity = new CryptoPrice();
+
+                entity.setSymbol(dto.getSymbol());
+                entity.setPrice(dto.getCurrent_price());
+                entity.setMarketCap(dto.getMarket_cap());
+                entity.setVolume(dto.getTotal_volume());
+                entity.setTimestamp(System.currentTimeMillis());
+
+                // Procesar datos en batch (lotes)
+                // 100 registros --> 1 batch insert
+                entities.add(entity);
             }
-
-            CryptoPrice entity = new CryptoPrice();
-
-            entity.setSymbol(dto.getSymbol());
-            entity.setPrice(dto.getCurrent_price());
-            entity.setMarketCap(dto.getMarket_cap());
-            entity.setVolume(dto.getTotal_volume());
-            entity.setTimestamp(System.currentTimeMillis());
-
-            // Procesar datos en batch (lotes)
-            // 100 registros --> 1 batch insert
-            entities.add(entity);
+        }catch(Exception e) {
+            System.out.println("ERROR during crypto ingestion: " + e.getMessage());
         }
 
         System.out.println("Saving " + entities.size() + " new entities");
