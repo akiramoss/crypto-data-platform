@@ -22,12 +22,15 @@ public class CryptoService {
 
     public void fetchAndSaveCryptoData() {
         CryptoApiResponse[] response = apiClient.fetchCryptoData();
+
+        System.out.println("Fetched " + response.length + " records from API");
+
         List<CryptoPrice> entities = new ArrayList<>();
 
         for (CryptoApiResponse dto : response) {
 
             // Evitar duplicados
-            if(repository.existsBySymbol(dto.getSymbol())) {
+            if (repository.existsBySymbol(dto.getSymbol())) {
                 continue;
             }
 
@@ -44,6 +47,10 @@ public class CryptoService {
             entities.add(entity);
         }
 
+        System.out.println("Saving " + entities.size() + " new entities");
+
         repository.saveAll(entities);
+
+        System.out.println("Data ingestion completed");
     }
 }
