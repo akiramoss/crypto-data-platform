@@ -6,6 +6,9 @@ import com.crypto_data_platform.crypto_data_platform.dto.CryptoApiResponse;
 import com.crypto_data_platform.crypto_data_platform.repository.CryptoRepository;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Service
 public class CryptoService {
 
@@ -19,6 +22,7 @@ public class CryptoService {
 
     public void fetchAndSaveCryptoData() {
         CryptoApiResponse[] response = apiClient.fetchCryptoData();
+        List<CryptoPrice> entities = new ArrayList<>();
 
         for (CryptoApiResponse dto : response) {
 
@@ -30,8 +34,11 @@ public class CryptoService {
             entity.setVolume(dto.getTotal_volume());
             entity.setTimestamp(System.currentTimeMillis());
 
-            repository.save(entity);
+            // Procesar datos en batch (lotes)
+            // 100 registros --> 1 batch insert
+            entities.add(entity);
         }
-    }
 
+        repository.saveAll(entities);
+    }
 }
