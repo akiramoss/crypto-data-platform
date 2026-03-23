@@ -26,6 +26,11 @@ public class CryptoService {
 
         for (CryptoApiResponse dto : response) {
 
+            // Evitar duplicados
+            if(repository.existsBySymbol(dto.getSymbol())) {
+                continue;
+            }
+
             CryptoPrice entity = new CryptoPrice();
 
             entity.setSymbol(dto.getSymbol());
