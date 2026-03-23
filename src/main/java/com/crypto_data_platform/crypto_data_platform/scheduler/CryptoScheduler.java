@@ -18,7 +18,11 @@ public class CryptoScheduler {
     public void runCryptoPipeline() {
 
         System.out.println("Starting scheduled crypto ingestion...");
-        service.fetchAndSaveCryptoData();
+        try {
+            service.fetchAndSaveCryptoData();
+        } catch (Exception e) {
+            System.out.println("Scheduler ERROR: " + e.getMessage());
+        }
         System.out.println("Finished scheduled crypto ingestion");
     }
 }

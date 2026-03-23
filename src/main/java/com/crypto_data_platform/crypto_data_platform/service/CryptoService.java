@@ -48,6 +48,7 @@ public class CryptoService {
             }
         }catch(Exception e) {
             System.out.println("ERROR during crypto ingestion: " + e.getMessage());
+            e.printStackTrace();
         }
 
         System.out.println("Saving " + entities.size() + " new entities");
