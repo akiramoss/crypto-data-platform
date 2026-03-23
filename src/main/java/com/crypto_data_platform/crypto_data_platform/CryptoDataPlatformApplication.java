@@ -1,6 +1,6 @@
 package com.crypto_data_platform.crypto_data_platform;
 
-import com.crypto_data_platform.crypto_data_platform.client.CryptoApiClient;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import com.crypto_data_platform.crypto_data_platform.domain.CryptoPrice;
 import com.crypto_data_platform.crypto_data_platform.repository.CryptoRepository;
 import com.crypto_data_platform.crypto_data_platform.service.CryptoService;
@@ -9,6 +9,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 
+@EnableScheduling // Ejecutar tareas automáticas
 @SpringBootApplication
 public class CryptoDataPlatformApplication {
 

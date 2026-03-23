@@ -52,5 +52,6 @@ public class CryptoService {
         repository.saveAll(entities);
 
         System.out.println("Data ingestion completed");
+        // API --> DTO --> Service --> Batch --> DB
     }
 }
