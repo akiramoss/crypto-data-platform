@@ -29,7 +29,7 @@ public class CryptoService {
         try {
             CryptoApiResponse[] response = apiClient.fetchCryptoData();
 
-            System.out.println("Fetched " + response.length + " records from API");
+            logger.info("Fetched {} records from API", response.length);
 
             for (CryptoApiResponse dto : response) {
 
@@ -50,16 +50,17 @@ public class CryptoService {
                 // 100 registros --> 1 batch insert
                 entities.add(entity);
             }
+
+            logger.info("Saving {} new entities", entities.size());
+
+            repository.saveAll(entities);
+
+            logger.info("Data ingestion completed");
+            // API --> DTO --> Service --> Batch --> DB
+
         }catch(Exception e) {
-            System.out.println("ERROR during crypto ingestion: " + e.getMessage());
+            logger.error("ERROR during crypto ingestion:", e);
             e.printStackTrace();
         }
-
-        System.out.println("Saving " + entities.size() + " new entities");
-
-        repository.saveAll(entities);
-
-        System.out.println("Data ingestion completed");
-        // API --> DTO --> Service --> Batch --> DB
     }
 }
