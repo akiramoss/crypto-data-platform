@@ -5,12 +5,16 @@ import com.crypto_data_platform.crypto_data_platform.domain.CryptoPrice;
 import com.crypto_data_platform.crypto_data_platform.dto.CryptoApiResponse;
 import com.crypto_data_platform.crypto_data_platform.repository.CryptoRepository;
 import org.springframework.stereotype.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Service
 public class CryptoService {
+
+    private static final Logger logger = LoggerFactory.getLogger(CryptoService.class);
 
     private final CryptoApiClient apiClient;
     private final CryptoRepository repository;
