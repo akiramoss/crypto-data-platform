@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -44,7 +45,8 @@ public class CryptoService {
                 entity.setPrice(dto.getCurrent_price());
                 entity.setMarketCap(dto.getMarket_cap());
                 entity.setVolume(dto.getTotal_volume());
-                entity.setTimestamp(System.currentTimeMillis());
+                // Mejorar legibilidad
+                entity.setTimeStamp(LocalDateTime.now());
 
                 // Procesar datos en batch (lotes)
                 // 100 registros --> 1 batch insert
