@@ -41,12 +41,15 @@ public class CryptoService {
 
                 CryptoPrice entity = new CryptoPrice();
 
+                LocalDateTime presentTime = LocalDateTime.now();
+
                 entity.setSymbol(dto.getSymbol());
                 entity.setPrice(dto.getCurrent_price());
                 entity.setMarketCap(dto.getMarket_cap());
                 entity.setVolume(dto.getTotal_volume());
                 // Mejorar legibilidad
-                entity.setTimeStamp(LocalDateTime.now());
+                entity.setTimeStamp(presentTime);
+                entity.setEventTime(presentTime);
 
                 // Procesar datos en batch (lotes)
                 // 100 registros --> 1 batch insert
