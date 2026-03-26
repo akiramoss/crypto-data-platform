@@ -60,7 +60,7 @@ public class CryptoService {
             logger.info("Data ingestion completed");
             // API --> DTO --> Service --> Batch --> DB
 
-        }catch(Exception e) {
+        } catch (Exception e) {
             logger.error("ERROR during crypto ingestion:", e);
             e.printStackTrace();
         }

@@ -26,4 +26,6 @@ public class CryptoPrice {
     // Guardar tiempo real legible
     // HIBERNATE --> DATETIME
     private LocalDateTime timeStamp;
+
+    private LocalDateTime eventTime;
 }
