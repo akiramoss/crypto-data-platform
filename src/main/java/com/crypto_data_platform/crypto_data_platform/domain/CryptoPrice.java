@@ -3,6 +3,8 @@ package com.crypto_data_platform.crypto_data_platform.domain;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Data
 @NoArgsConstructor
@@ -14,8 +16,14 @@ public class CryptoPrice {
     private Long id;
 
     private String symbol;
+
     private Double price;
+
     private Double marketCap;
+
     private Double volume;
-    private Long timestamp;
+
+    // Guardar tiempo real legible
+    // HIBERNATE --> DATETIME
+    private LocalDateTime timeStamp;
 }
