@@ -3,12 +3,12 @@ package com.crypto_data_platform.crypto_data_platform.service;
 import com.crypto_data_platform.crypto_data_platform.client.CryptoApiClient;
 import com.crypto_data_platform.crypto_data_platform.domain.CryptoPrice;
 import com.crypto_data_platform.crypto_data_platform.dto.CryptoApiResponse;
+import com.crypto_data_platform.crypto_data_platform.mapper.CryptoMapper;
 import com.crypto_data_platform.crypto_data_platform.repository.CryptoRepository;
 import org.springframework.stereotype.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,41 +19,36 @@ public class CryptoService {
 
     private final CryptoApiClient apiClient;
     private final CryptoRepository repository;
-    private final List<CryptoPrice> entities = new ArrayList<>();
 
     public CryptoService(CryptoApiClient apiClient, CryptoRepository repository) {
         this.apiClient = apiClient;
         this.repository = repository;
     }
 
+    /**
+     * 1. Llama a la API
+     * 2. Recibe DTOs
+     * 3. Los transforma (Mapper)
+     * 4. Filtra duplicados
+     * 5. Los acumula (batch)
+     * 6. Los guarda en DB
+     */
     public void fetchAndSaveCryptoData() {
         try {
             CryptoApiResponse[] response = apiClient.fetchCryptoData();
 
             logger.info("Fetched {} records from API", response.length);
 
+            List<CryptoPrice> entities = new ArrayList<>();
+
             for (CryptoApiResponse dto : response) {
 
-                // Evitar duplicados
                 if (repository.existsBySymbol(dto.getSymbol())) {
                     continue;
                 }
 
-                CryptoPrice entity = new CryptoPrice();
+                CryptoPrice entity = CryptoMapper.toEntity(dto);
 
-                LocalDateTime presentTime = LocalDateTime.now();
-
-                entity.setSymbol(dto.getSymbol());
-                entity.setPrice(dto.getCurrent_price());
-                entity.setMarketCap(dto.getMarket_cap());
-                entity.setVolume(dto.getTotal_volume());
-
-                entity.setEventTime(presentTime);
-                // Mejorar legibilidad
-                entity.setTimeStamp(presentTime);
-
-                // Procesar datos en batch (lotes)
-                // 100 registros --> 1 batch insert
                 entities.add(entity);
             }
 
@@ -62,11 +57,9 @@ public class CryptoService {
             repository.saveAll(entities);
 
             logger.info("Data ingestion completed");
-            // API --> DTO --> Service --> Batch --> DB
 
         } catch (Exception e) {
-            logger.error("ERROR during crypto ingestion:", e);
-            e.printStackTrace();
+            logger.error("ERROR during crypto ingestion", e);
         }
     }
 }
