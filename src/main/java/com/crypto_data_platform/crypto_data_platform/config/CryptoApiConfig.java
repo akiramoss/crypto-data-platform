@@ -18,6 +18,9 @@ public class CryptoApiConfig {
     @Value("${crypto.api.perPage}")
     private int perPage;
 
+    @Value("${crypto.api.key}")
+    private String apiKey;
+
     public String getUrl() {
         return url;
     }
@@ -32,5 +35,9 @@ public class CryptoApiConfig {
 
     public int getPerPage() {
         return perPage;
+    }
+
+    public String getApiKey(){
+        return apiKey;
     }
 }
