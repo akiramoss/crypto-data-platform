@@ -4,6 +4,7 @@ import com.crypto_data_platform.crypto_data_platform.domain.CryptoPrice;
 import com.crypto_data_platform.crypto_data_platform.dto.CryptoApiResponse;
 
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 public class CryptoMapper {
 
@@ -16,10 +17,15 @@ public class CryptoMapper {
         entity.setMarketCap(dto.getMarket_cap());
         entity.setVolume(dto.getTotal_volume());
 
-        LocalDateTime now = LocalDateTime.now();
+        // Event time real desde la API
+        LocalDateTime eventTime = OffsetDateTime.
+                parse(dto.getLast_updated()).toLocalDateTime();
 
-        entity.setEventTime(now);
-        entity.setTimeStamp(now);
+        // Ingestion Time (cuando guardamos los datos)
+        LocalDateTime ingestionTime = LocalDateTime.now();
+
+        entity.setEventTime(eventTime);
+        entity.setTimeStamp(ingestionTime);
 
         return entity;
     }

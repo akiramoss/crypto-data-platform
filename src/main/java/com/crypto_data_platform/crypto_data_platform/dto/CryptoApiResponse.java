@@ -16,4 +16,6 @@ public class CryptoApiResponse {
     private Double market_cap;
 
     private Double total_volume;
+
+    private String last_updated;
 }
