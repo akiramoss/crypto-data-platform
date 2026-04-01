@@ -37,7 +37,7 @@ public class CryptoApiConfig {
         return perPage;
     }
 
-    public String getApiKey(){
+    public String getApiKey() {
         return apiKey;
     }
 }

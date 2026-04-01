@@ -6,6 +6,12 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
+@Table(
+        name = "crypto_price",
+        uniqueConstraints = {
+                @UniqueConstraint(columnNames = {"symbol", "eventTime"})
+        }
+)
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
