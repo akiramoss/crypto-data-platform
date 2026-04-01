@@ -50,10 +50,6 @@ public class CryptoService {
 
             for (CryptoApiResponse dto : response) {
 
-                if (repository.existsBySymbol(dto.getSymbol())) {
-                    continue;
-                }
-
                 CryptoPrice entity = CryptoMapper.toEntity(dto);
 
                 entities.add(entity);

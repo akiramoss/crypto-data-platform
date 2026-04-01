@@ -18,7 +18,7 @@ public class CryptoScheduler {
         this.service = service;
     }
 
-    @Scheduled(fixedRate = 120000) // cada 120 segundos
+    @Scheduled(fixedRate = 60000) // cada 60 segundos
     public void runCryptoPipeline() {
 
         logger.info("Starting scheduled crypto ingestion...");
