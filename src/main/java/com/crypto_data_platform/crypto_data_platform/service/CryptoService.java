@@ -20,11 +20,13 @@ public class CryptoService {
     private final CryptoApiClient apiClient;
     private final CryptoRepository repository;
     private final RawDataService rawDataService;
+    private final ProcessedDataService processedDataService;
 
-    public CryptoService(CryptoApiClient apiClient, CryptoRepository repository, RawDataService rawDataService) {
+    public CryptoService(CryptoApiClient apiClient, CryptoRepository repository, RawDataService rawDataService, ProcessedDataService processedDataService) {
         this.apiClient = apiClient;
         this.repository = repository;
         this.rawDataService = rawDataService;
+        this.processedDataService = processedDataService;
     }
 
     /**
@@ -60,6 +62,8 @@ public class CryptoService {
             logger.info("Saving {} new entities", entities.size());
 
             repository.saveAll(entities);
+
+            processedDataService.saveProcessedData(entities);
 
             logger.info("Data ingestion completed");
 
