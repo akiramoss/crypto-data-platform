@@ -31,11 +31,10 @@ public class CryptoService {
 
     /**
      * 1. Llama a la API
-     * 2. Recibe DTOs
-     * 3. Los transforma (Mapper)
-     * 4. Filtra duplicados
-     * 5. Los acumula (batch)
-     * 6. Los guarda en DB
+     * 2. Guarda datos RAW
+     * 3. Transforma DTO → Entity
+     * 4. Inserta en DB (control de duplicados en DB)
+     * 5. Guarda datos PROCESSED
      */
     public void fetchAndSaveCryptoData() {
         try {
@@ -49,10 +48,7 @@ public class CryptoService {
             List<CryptoPrice> entities = new ArrayList<>();
 
             for (CryptoApiResponse dto : response) {
-
-                CryptoPrice entity = CryptoMapper.toEntity(dto);
-
-                entities.add(entity);
+                entities.add(CryptoMapper.toEntity(dto));
             }
 
             logger.info("Saving {} new entities", entities.size());
@@ -60,11 +56,10 @@ public class CryptoService {
             // Solución temporal
             try {
                 repository.saveAll(entities);
+                processedDataService.saveProcessedData(entities);
             } catch (Exception e) {
-                logger.warn("Some duplicate records were ignored");
+                logger.warn("Duplicate records detected during batch insert, some entries were skipped");
             }
-
-            processedDataService.saveProcessedData(entities);
 
             logger.info("Data ingestion completed");
 
