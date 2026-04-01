@@ -19,10 +19,12 @@ public class CryptoService {
 
     private final CryptoApiClient apiClient;
     private final CryptoRepository repository;
+    private final RawDataService rawDataService;
 
-    public CryptoService(CryptoApiClient apiClient, CryptoRepository repository) {
+    public CryptoService(CryptoApiClient apiClient, CryptoRepository repository, RawDataService rawDataService) {
         this.apiClient = apiClient;
         this.repository = repository;
+        this.rawDataService = rawDataService;
     }
 
     /**
@@ -36,6 +38,9 @@ public class CryptoService {
     public void fetchAndSaveCryptoData() {
         try {
             CryptoApiResponse[] response = apiClient.fetchCryptoData();
+
+            // Guardamos datos RAW antes de procesarlos
+            rawDataService.saveRawData(response);
 
             logger.info("Fetched {} records from API", response.length);
 
