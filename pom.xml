@@ -69,6 +69,14 @@
             <scope>test</scope>
         </dependency>
 
+        <!-- H2 in-memory database, used only in tests (application-test.properties)
+             so that @SpringBootTest / @DataJpaTest never need a real MySQL instance -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>test</scope>
+        </dependency>
+
         <!-- Soporte fechas (LocalDateTime JSON) -->
         <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>
