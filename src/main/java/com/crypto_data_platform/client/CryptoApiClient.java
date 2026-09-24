@@ -24,7 +24,8 @@ public class CryptoApiClient {
         String url = config.getUrl()
                 + "?vs_currency=" + config.getVsCurrency()
                 + "&order=" + config.getOrder()
-                + "&per_page=" + config.getPerPage();
+                + "&per_page=" + config.getPerPage()
+                + "&x_cg_demo_api_key=" + config.getApiKey();
 
         logger.info("Calling API with URL: {}", url);
 

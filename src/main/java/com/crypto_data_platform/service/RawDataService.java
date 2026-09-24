@@ -22,6 +22,11 @@ public class RawDataService {
     }
 
     public void saveRawData(Object[] data) {
+        if (data == null) {
+            logger.warn("No raw data to save (null array), skipping RAW file write");
+            return;
+        }
+
         try {
             String fileName = ndjsonFileWriter.write(RAW_DATA_DIRECTORY, FILE_NAME_PREFIX, Arrays.asList(data));
             logger.info("RAW NDJSON saved at: {}", fileName);

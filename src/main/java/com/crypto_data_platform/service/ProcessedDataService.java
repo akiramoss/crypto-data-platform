@@ -23,6 +23,11 @@ public class ProcessedDataService {
     }
 
     public void saveProcessedData(List<CryptoPrice> data) {
+        if (data == null) {
+            logger.warn("No processed data to save (null list), skipping PROCESSED file write");
+            return;
+        }
+
         try {
             String fileName = ndjsonFileWriter.write(PROCESSED_DATA_DIRECTORY, FILE_NAME_PREFIX, data);
             logger.info("PROCESSED data saved at: {}", fileName);

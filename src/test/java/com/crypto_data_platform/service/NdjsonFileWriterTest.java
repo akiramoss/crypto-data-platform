@@ -98,19 +98,18 @@ class NdjsonFileWriterTest {
     }
 
     @Test
-    void write_throwsIOException_andLeavesPartialFile_whenAnItemFailsToSerialize(@TempDir Path tempDir) {
-        // Arrange: first item is fine, second item blows up during serialization.
+    void write_throwsIOException_andCreatesNoFileAtAll_whenAnItemFailsToSerialize(@TempDir Path tempDir) {
+        // Fixed: NdjsonFileWriter.write(...) (service/NdjsonFileWriter.java) now serializes every
+        // item BEFORE opening/creating the output file. First item is fine, second item blows up
+        // during serialization.
         List<Object> items = List.of(new Sample("BTC", 1.0, LocalDateTime.now()), new Unserializable());
 
         // Act + Assert: exception propagates out of write() (declared as throws IOException).
         assertThatThrownBy(() -> writer.write(tempDir.toString(), "crypto_", items))
                 .isInstanceOf(IOException.class);
 
-        // Documents current behavior: the file was already created and the first (valid) line was
-        // flushed to disk before the failure, but the file is left incomplete/truncated for the
-        // batch — callers (RawDataService/ProcessedDataService) only log this and never signal it,
-        // so a partially written NDJSON file can silently be produced.
+        // No partial/truncated file is left behind: the failure happens before any file is created.
         File[] createdFiles = tempDir.toFile().listFiles();
-        assertThat(createdFiles).isNotNull().hasSize(1);
+        assertThat(createdFiles).isNotNull().isEmpty();
     }
 }

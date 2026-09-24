@@ -9,7 +9,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.List;
@@ -18,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -88,23 +88,22 @@ class CryptoServiceTest {
     }
 
     @Test
-    void fetchAndSaveCryptoData_apiReturnsNull_abortsPipelineWithoutPersistingAnything() {
-        // BUG (documented, not fixed): CryptoService.fetchFromApiAndSaveRaw() (service/CryptoService.java:52-60)
-        // passes a possibly-null "response" straight to rawDataService.saveRawData(response), then
-        // immediately calls "response.length" in the log statement on the next line. If the API
-        // client returns null (e.g. CoinGecko outage returning an empty body), that logger.info call
-        // throws a NullPointerException. It is swallowed by the top-level try/catch in
-        // fetchAndSaveCryptoData(), so the failure is only visible in the logs — nothing is
-        // persisted, and the caller (the scheduler) never finds out anything went wrong.
+    void fetchAndSaveCryptoData_apiReturnsNull_skipsRawSave_andCompletesCycleWithEmptyBatch() {
+        // Fixed: CryptoService.fetchFromApiAndSaveRaw() (service/CryptoService.java) now null-checks
+        // the API response before saving raw data or reading its length. A null response (e.g. a
+        // CoinGecko outage returning an empty body) no longer produces an NPE swallowed by the
+        // top-level catch; instead it logs a warning and the cycle completes gracefully with an
+        // empty batch, just like the "API returns an empty array" case below.
         when(apiClient.fetchCryptoData()).thenReturn(null);
 
-        // Act: the outer catch(Exception) swallows the NPE, so the call itself must not throw.
+        // Act
         assertThatCode(() -> cryptoService.fetchAndSaveCryptoData()).doesNotThrowAnyException();
 
-        // Assert
-        verify(rawDataService).saveRawData(null);
-        verify(repository, never()).saveAll(anyList());
-        verify(processedDataService, never()).saveProcessedData(any());
+        // Assert: raw data is never saved for a null response...
+        verify(rawDataService, never()).saveRawData(any());
+        // ...but the cycle still completes with an empty batch, same as an empty array response.
+        verify(repository).saveAll(List.of());
+        verify(processedDataService).saveProcessedData(List.of());
     }
 
     @Test
@@ -123,13 +122,12 @@ class CryptoServiceTest {
     }
 
     @Test
-    void fetchAndSaveCryptoData_oneInvalidLastUpdatedInBatch_dropsWholeBatchSilently() {
-        // BUG (documented, not fixed): CryptoService.mapToEntities() (service/CryptoService.java:62-71)
-        // calls CryptoMapper.toEntity(dto) in a plain loop with no per-item try/catch. If ANY item
-        // in the batch has an invalid/null "last_updated" (see CryptoMapperTest), the mapper throws
-        // and the exception propagates up through fetchAndSaveCryptoData()'s top-level catch. As a
-        // result, valid entries earlier in the same batch (BTC below) are silently discarded too:
-        // nothing is persisted for the entire fetch cycle, and only a log line records the failure.
+    void fetchAndSaveCryptoData_oneInvalidLastUpdatedInBatch_skipsOnlyThatRecord_persistsRestOfBatch() {
+        // Fixed: CryptoService.mapToEntities() (service/CryptoService.java) now wraps
+        // CryptoMapper.toEntity(dto) in a per-item try/catch. An item with an invalid/null
+        // "last_updated" (see CryptoMapperTest) is logged and skipped instead of aborting the
+        // mapping of the entire batch, so valid entries in the same batch (BTC below) are still
+        // persisted.
         CryptoApiResponse valid = response("BTC", 65000.5);
         CryptoApiResponse invalid = response("ETH", 3200.1);
         invalid.setLast_updated("not-a-valid-date");
@@ -141,32 +139,69 @@ class CryptoServiceTest {
 
         // Assert: raw data for the whole (unparsed) batch is still saved...
         verify(rawDataService).saveRawData(apiResponse);
-        // ...but NOTHING is persisted to the DB or written to PROCESSED, not even the valid BTC entry.
-        verify(repository, never()).saveAll(anyList());
-        verify(processedDataService, never()).saveProcessedData(any());
+
+        // ...and the valid BTC entry is persisted and processed despite the malformed ETH record.
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<CryptoPrice>> captor = ArgumentCaptor.forClass(List.class);
+        verify(repository).saveAll(captor.capture());
+        assertThat(captor.getValue()).hasSize(1);
+        assertThat(captor.getValue().get(0).getSymbol()).isEqualTo("BTC");
+
+        verify(processedDataService).saveProcessedData(captor.getValue());
     }
 
     @Test
-    void fetchAndSaveCryptoData_repositorySaveAllThrowsOnDuplicate_processedDataNeverSaved() {
-        // BUG (documented, not fixed): CryptoService.persistEntitiesAndProcessedCopy() (service/CryptoService.java:73-81)
-        // wraps repository.saveAll(entities) and processedDataService.saveProcessedData(entities) in
-        // a single try/catch. Spring Data JPA's saveAll is effectively all-or-nothing for a batch
-        // (a single duplicate/constraint violation aborts the whole saveAll call), so ONE duplicate
-        // record in the batch causes the ENTIRE batch to be lost — none of the (possibly many other
-        // valid, non-duplicate) entities get persisted — and the PROCESSED copy is skipped
-        // altogether for that fetch cycle, since saveProcessedData(...) is never reached. The
-        // failure is only logged as a generic warning, with no per-item recovery or retry.
-        CryptoApiResponse[] apiResponse = {response("BTC", 65000.5), response("ETH", 3200.1), response("SOL", 140.0)};
+    void fetchAndSaveCryptoData_oneEntityAlreadyExistsInDb_isFilteredOut_othersPersistedAndAllProcessed() {
+        // Fixed: CryptoService.persistEntitiesAndProcessedCopy() (service/CryptoService.java) now
+        // filters out entities that already exist (by symbol + eventTime) BEFORE calling
+        // repository.saveAll(...), instead of letting a unique-constraint violation abort the whole
+        // batch. A duplicate no longer causes the entire batch to be lost, and the PROCESSED copy is
+        // always written for everything fetched this cycle, regardless of DB persistence outcome.
+        CryptoApiResponse btc = response("BTC", 65000.5);
+        CryptoApiResponse eth = response("ETH", 3200.1);
+        CryptoApiResponse sol = response("SOL", 140.0);
+        CryptoApiResponse[] apiResponse = {btc, eth, sol};
         when(apiClient.fetchCryptoData()).thenReturn(apiResponse);
-        doThrow(new DataIntegrityViolationException("Duplicate entry for key (symbol, event_time)"))
+        // Simulate ETH already being present in the database for this eventTime (BTC/SOL are new).
+        // All three symbols are stubbed explicitly to avoid Mockito's strict-stub argument-mismatch
+        // check, since existsBySymbolAndEventTime is called once per entity in the batch.
+        when(repository.existsBySymbolAndEventTime(eq("BTC"), any())).thenReturn(false);
+        when(repository.existsBySymbolAndEventTime(eq("ETH"), any())).thenReturn(true);
+        when(repository.existsBySymbolAndEventTime(eq("SOL"), any())).thenReturn(false);
+
+        // Act
+        cryptoService.fetchAndSaveCryptoData();
+
+        // Assert: only BTC and SOL (not the duplicate ETH) are sent to the repository...
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<CryptoPrice>> captor = ArgumentCaptor.forClass(List.class);
+        verify(repository).saveAll(captor.capture());
+        assertThat(captor.getValue()).extracting(CryptoPrice::getSymbol).containsExactly("BTC", "SOL");
+
+        // ...but the PROCESSED copy still contains all 3 entities fetched this cycle.
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<CryptoPrice>> processedCaptor = ArgumentCaptor.forClass(List.class);
+        verify(processedDataService).saveProcessedData(processedCaptor.capture());
+        assertThat(processedCaptor.getValue()).extracting(CryptoPrice::getSymbol)
+                .containsExactly("BTC", "ETH", "SOL");
+    }
+
+    @Test
+    void fetchAndSaveCryptoData_saveAllThrowsUnexpectedError_isLoggedButProcessedDataStillSaved() {
+        // Fixed: an unexpected repository failure (unrelated to duplicates, e.g. a transient DB
+        // error) is now caught on its own and no longer prevents the PROCESSED copy from being
+        // saved, since saveProcessedData(...) is called unconditionally afterwards.
+        CryptoApiResponse[] apiResponse = {response("BTC", 65000.5), response("ETH", 3200.1)};
+        when(apiClient.fetchCryptoData()).thenReturn(apiResponse);
+        doThrow(new RuntimeException("simulated transient DB failure"))
                 .when(repository).saveAll(anyList());
 
-        // Act: exception is caught and logged inside persistEntitiesAndProcessedCopy/fetchAndSaveCryptoData.
+        // Act
         assertThatCode(() -> cryptoService.fetchAndSaveCryptoData()).doesNotThrowAnyException();
 
         // Assert
         verify(repository).saveAll(anyList());
-        verify(processedDataService, never()).saveProcessedData(any());
+        verify(processedDataService).saveProcessedData(anyList());
     }
 
     @Test

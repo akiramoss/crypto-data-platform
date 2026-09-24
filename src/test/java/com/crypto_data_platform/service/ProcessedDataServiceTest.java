@@ -3,6 +3,7 @@ package com.crypto_data_platform.service;
 import com.crypto_data_platform.domain.CryptoPrice;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -19,7 +20,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.assertThatCode;
 
 /**
  * ProcessedDataService writes to a hardcoded "data/processed" directory (relative to the JVM
@@ -30,7 +31,10 @@ class ProcessedDataServiceTest {
 
     private static final String PROCESSED_DIR = "data/processed";
 
-    private final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
+    // Mirrors the (now fixed) JacksonConfig.objectMapper() bean used in production.
+    private final ObjectMapper objectMapper = new ObjectMapper()
+            .registerModule(new JavaTimeModule())
+            .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
     private final ProcessedDataService processedDataService = new ProcessedDataService(objectMapper);
 
     private Set<String> filesBefore;
@@ -95,10 +99,9 @@ class ProcessedDataServiceTest {
         });
         assertThat(firstLine).containsEntry("symbol", "BTC");
         assertThat(firstLine).containsKeys("eventTime", "timeStamp");
-        // NOTE: JacksonConfig registers JavaTimeModule but never disables
-        // SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, so LocalDateTime fields are serialized
-        // as a numeric array [year, month, day, hour, minute] rather than an ISO-8601 string.
-        assertThat(firstLine.get("eventTime")).isEqualTo(List.of(2024, 1, 15, 10, 30));
+        // Fixed: JacksonConfig now disables SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, so
+        // LocalDateTime fields serialize as a readable ISO-8601 string instead of a numeric array.
+        assertThat(firstLine.get("eventTime")).isEqualTo("2024-01-15T10:30:00");
     }
 
     @Test
@@ -113,14 +116,16 @@ class ProcessedDataServiceTest {
     }
 
     @Test
-    void saveProcessedData_doesNotThrow_whenDataListIsNull() {
-        // ProcessedDataService.saveProcessedData(List<CryptoPrice> data) hands "data" straight to
-        // NdjsonFileWriter.write(...), which iterates "items" with a for-each loop. A null list
-        // throws NullPointerException on iteration, same class of issue as RawDataService with a
-        // null array — but here it happens to be wrapped since it is NOT declared as IOException
-        // either; it propagates out of saveProcessedData uncaught.
-        assertThatThrownBy(() -> processedDataService.saveProcessedData(null))
-                .isInstanceOf(NullPointerException.class);
+    void saveProcessedData_doesNotThrow_andWritesNoFile_whenDataListIsNull() {
+        // Fixed: ProcessedDataService.saveProcessedData(List<CryptoPrice> data) (service/ProcessedDataService.java)
+        // now null-checks "data" before handing it to NdjsonFileWriter.write(...), which used to
+        // iterate a null list and throw an uncaught NullPointerException. Same class of fix as
+        // RawDataService.saveRawData(null).
+        assertThatCode(() -> processedDataService.saveProcessedData(null)).doesNotThrowAnyException();
+
+        Set<String> filesAfter = listFiles();
+        filesAfter.removeAll(filesBefore);
+        assertThat(filesAfter).isEmpty();
     }
 
     private String newlyCreatedFile() {

@@ -9,6 +9,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Helper compartido para escribir colecciones de objetos en formato NDJSON
@@ -42,12 +44,18 @@ class NdjsonFileWriter {
             directory.mkdirs();
         }
 
+        // Serializamos todos los elementos ANTES de abrir el fichero: si uno falla, no se crea
+        // ningún fichero parcial/truncado en disco.
+        List<String> jsonLines = new ArrayList<>();
+        for (Object item : items) {
+            jsonLines.add(objectMapper.writeValueAsString(item));
+        }
+
         String timestamp = LocalDateTime.now().format(TIMESTAMP_FORMATTER);
         String fileName = directoryPath + "/" + fileNamePrefix + timestamp + ".json";
 
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(fileName))) {
-            for (Object item : items) {
-                String jsonLine = objectMapper.writeValueAsString(item);
+            for (String jsonLine : jsonLines) {
                 writer.write(jsonLine);
                 writer.newLine();
             }

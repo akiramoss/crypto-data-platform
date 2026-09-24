@@ -52,6 +52,11 @@ public class CryptoService {
     private CryptoApiResponse[] fetchFromApiAndSaveRaw() {
         CryptoApiResponse[] response = apiClient.fetchCryptoData();
 
+        if (response == null) {
+            logger.warn("API returned a null response, skipping this ingestion cycle");
+            return new CryptoApiResponse[0];
+        }
+
         // Guardamos datos RAW antes de procesarlos
         rawDataService.saveRawData(response);
 
@@ -63,7 +68,11 @@ public class CryptoService {
         List<CryptoPrice> entities = new ArrayList<>();
 
         for (CryptoApiResponse dto : response) {
-            entities.add(CryptoMapper.toEntity(dto));
+            try {
+                entities.add(CryptoMapper.toEntity(dto));
+            } catch (Exception e) {
+                logger.warn("Skipping malformed record symbol={}: {}", dto.getSymbol(), e.getMessage());
+            }
         }
 
         logger.info("Saving {} new entities", entities.size());
@@ -71,12 +80,23 @@ public class CryptoService {
     }
 
     private void persistEntitiesAndProcessedCopy(List<CryptoPrice> entities) {
-        // Solución temporal
-        try {
-            repository.saveAll(entities);
-            processedDataService.saveProcessedData(entities);
-        } catch (Exception e) {
-            logger.warn("Duplicate records detected during batch insert, some entries were skipped");
+        List<CryptoPrice> newEntities = entities.stream()
+                .filter(entity -> !repository.existsBySymbolAndEventTime(entity.getSymbol(), entity.getEventTime()))
+                .toList();
+
+        if (newEntities.size() < entities.size()) {
+            logger.warn("Skipped {} duplicate record(s) already present in the database",
+                    entities.size() - newEntities.size());
         }
+
+        try {
+            repository.saveAll(newEntities);
+        } catch (Exception e) {
+            logger.error("Unexpected error while persisting crypto entities", e);
+        }
+
+        // La copia PROCESSED refleja siempre lo que se ha procesado en este ciclo,
+        // independientemente de si algún registro ya existía en BD.
+        processedDataService.saveProcessedData(entities);
     }
 }
