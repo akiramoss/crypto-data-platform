@@ -38,33 +38,45 @@ public class CryptoService {
      */
     public void fetchAndSaveCryptoData() {
         try {
-            CryptoApiResponse[] response = apiClient.fetchCryptoData();
-
-            // Guardamos datos RAW antes de procesarlos
-            rawDataService.saveRawData(response);
-
-            logger.info("Fetched {} records from API", response.length);
-
-            List<CryptoPrice> entities = new ArrayList<>();
-
-            for (CryptoApiResponse dto : response) {
-                entities.add(CryptoMapper.toEntity(dto));
-            }
-
-            logger.info("Saving {} new entities", entities.size());
-
-            // Solución temporal
-            try {
-                repository.saveAll(entities);
-                processedDataService.saveProcessedData(entities);
-            } catch (Exception e) {
-                logger.warn("Duplicate records detected during batch insert, some entries were skipped");
-            }
+            CryptoApiResponse[] response = fetchFromApiAndSaveRaw();
+            List<CryptoPrice> entities = mapToEntities(response);
+            persistEntitiesAndProcessedCopy(entities);
 
             logger.info("Data ingestion completed");
 
         } catch (Exception e) {
             logger.error("ERROR during crypto ingestion", e);
+        }
+    }
+
+    private CryptoApiResponse[] fetchFromApiAndSaveRaw() {
+        CryptoApiResponse[] response = apiClient.fetchCryptoData();
+
+        // Guardamos datos RAW antes de procesarlos
+        rawDataService.saveRawData(response);
+
+        logger.info("Fetched {} records from API", response.length);
+        return response;
+    }
+
+    private List<CryptoPrice> mapToEntities(CryptoApiResponse[] response) {
+        List<CryptoPrice> entities = new ArrayList<>();
+
+        for (CryptoApiResponse dto : response) {
+            entities.add(CryptoMapper.toEntity(dto));
+        }
+
+        logger.info("Saving {} new entities", entities.size());
+        return entities;
+    }
+
+    private void persistEntitiesAndProcessedCopy(List<CryptoPrice> entities) {
+        // Solución temporal
+        try {
+            repository.saveAll(entities);
+            processedDataService.saveProcessedData(entities);
+        } catch (Exception e) {
+            logger.warn("Duplicate records detected during batch insert, some entries were skipped");
         }
     }
 }

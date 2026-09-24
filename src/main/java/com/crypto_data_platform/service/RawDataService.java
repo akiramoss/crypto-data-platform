@@ -1,46 +1,32 @@
 package com.crypto_data_platform.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
+import java.io.IOException;
+import java.util.Arrays;
 
 @Service
 public class RawDataService {
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private static final Logger logger = LoggerFactory.getLogger(RawDataService.class);
+    private static final String RAW_DATA_DIRECTORY = "data/raw";
+    private static final String FILE_NAME_PREFIX = "crypto_";
+
+    private final NdjsonFileWriter ndjsonFileWriter;
+
+    public RawDataService(ObjectMapper objectMapper) {
+        this.ndjsonFileWriter = new NdjsonFileWriter(objectMapper);
+    }
 
     public void saveRawData(Object[] data) {
         try {
-            String timestamp = LocalDateTime.now()
-                    .format(DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss"));
-
-            File directory = new File("data/raw");
-
-            if (!directory.exists()) {
-                directory.mkdirs();
-            }
-
-            String fileName = "data/raw/crypto_" + timestamp + ".json";
-
-            BufferedWriter writer = new BufferedWriter(new FileWriter(fileName));
-
-            for (Object obj : data) {
-                String jsonLine = objectMapper.writeValueAsString(obj);
-                writer.write(jsonLine);
-                writer.newLine();
-            }
-
-            writer.close();
-
-            System.out.println("RAW NDJSON saved at: " + fileName);
-
-        } catch (Exception e) {
-            System.out.println("Error saving raw data: " + e.getMessage());
+            String fileName = ndjsonFileWriter.write(RAW_DATA_DIRECTORY, FILE_NAME_PREFIX, Arrays.asList(data));
+            logger.info("RAW NDJSON saved at: {}", fileName);
+        } catch (IOException e) {
+            logger.error("Error saving raw data: {}", e.getMessage(), e);
         }
     }
 }
