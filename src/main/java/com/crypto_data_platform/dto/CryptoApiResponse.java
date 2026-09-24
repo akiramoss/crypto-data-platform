@@ -1,4 +1,4 @@
-package com.crypto_data_platform.crypto_data_platform.dto;
+package com.crypto_data_platform.dto;
 
 import lombok.Data;
 

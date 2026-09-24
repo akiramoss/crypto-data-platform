@@ -1,6 +1,6 @@
-package com.crypto_data_platform.crypto_data_platform.service;
+package com.crypto_data_platform.service;
 
-import com.crypto_data_platform.crypto_data_platform.domain.CryptoPrice;
+import com.crypto_data_platform.domain.CryptoPrice;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
 

@@ -1,6 +1,6 @@
-package com.crypto_data_platform.crypto_data_platform.scheduler;
+package com.crypto_data_platform.scheduler;
 
-import com.crypto_data_platform.crypto_data_platform.service.CryptoService;
+import com.crypto_data_platform.service.CryptoService;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.slf4j.Logger;

@@ -1,4 +1,4 @@
-package com.crypto_data_platform.crypto_data_platform.config;
+package com.crypto_data_platform.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;

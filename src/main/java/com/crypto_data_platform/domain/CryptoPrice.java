@@ -1,4 +1,4 @@
-package com.crypto_data_platform.crypto_data_platform.domain;
+package com.crypto_data_platform.domain;
 
 import jakarta.persistence.*;
 

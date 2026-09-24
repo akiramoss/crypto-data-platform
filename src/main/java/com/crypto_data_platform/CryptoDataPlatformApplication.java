@@ -1,4 +1,4 @@
-package com.crypto_data_platform.crypto_data_platform;
+package com.crypto_data_platform;
 
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.boot.SpringApplication;

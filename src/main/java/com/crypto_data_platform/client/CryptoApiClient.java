@@ -1,7 +1,7 @@
-package com.crypto_data_platform.crypto_data_platform.client;
+package com.crypto_data_platform.client;
 
-import com.crypto_data_platform.crypto_data_platform.config.CryptoApiConfig;
-import com.crypto_data_platform.crypto_data_platform.dto.CryptoApiResponse;
+import com.crypto_data_platform.config.CryptoApiConfig;
+import com.crypto_data_platform.dto.CryptoApiResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;

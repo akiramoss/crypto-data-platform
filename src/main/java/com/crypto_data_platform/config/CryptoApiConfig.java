@@ -1,4 +1,4 @@
-package com.crypto_data_platform.crypto_data_platform.config;
+package com.crypto_data_platform.config;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;

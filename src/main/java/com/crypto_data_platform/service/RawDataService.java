@@ -1,4 +1,4 @@
-package com.crypto_data_platform.crypto_data_platform.service;
+package com.crypto_data_platform.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;

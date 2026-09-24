@@ -1,7 +1,7 @@
-package com.crypto_data_platform.crypto_data_platform.mapper;
+package com.crypto_data_platform.mapper;
 
-import com.crypto_data_platform.crypto_data_platform.domain.CryptoPrice;
-import com.crypto_data_platform.crypto_data_platform.dto.CryptoApiResponse;
+import com.crypto_data_platform.domain.CryptoPrice;
+import com.crypto_data_platform.dto.CryptoApiResponse;
 
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
