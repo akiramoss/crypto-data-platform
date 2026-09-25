@@ -10,6 +10,10 @@ public class CryptoMapper {
 
     public static CryptoPrice toEntity(CryptoApiResponse dto) {
 
+        if (dto.getLast_updated() == null) {
+            throw new IllegalArgumentException("last_updated is required to map a CryptoApiResponse but was null (symbol=" + dto.getSymbol() + ")");
+        }
+
         CryptoPrice entity = new CryptoPrice();
 
         entity.setSymbol(dto.getSymbol());

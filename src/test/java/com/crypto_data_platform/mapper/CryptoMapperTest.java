@@ -75,18 +75,16 @@ class CryptoMapperTest {
     }
 
     @Test
-    void toEntity_throwsNullPointerException_whenLastUpdatedIsNull() {
-        // BUG (documented, not fixed): CryptoMapper.toEntity (mapper/CryptoMapper.java:21-22) calls
-        // OffsetDateTime.parse(dto.getLast_updated()) without a null-check. If the API ever returns
-        // a record without "last_updated", the whole mapping call blows up with an unchecked NPE
-        // instead of a meaningful validation error. Since CryptoService#mapToEntities has no
-        // try/catch per item, ONE such record aborts the mapping of the entire batch (see
-        // CryptoServiceTest for the batch-level consequence).
+    void toEntity_throwsIllegalArgumentException_whenLastUpdatedIsNull() {
+        // Fixed: CryptoMapper.toEntity now null-checks last_updated up front and throws a
+        // meaningful IllegalArgumentException instead of an unchecked NPE from
+        // OffsetDateTime.parse(null). CryptoService#mapToEntities still catches this per item,
+        // so one such record only skips itself instead of aborting the whole batch.
         CryptoApiResponse dto = validDto();
         dto.setLast_updated(null);
 
         assertThatThrownBy(() -> CryptoMapper.toEntity(dto))
-                .isInstanceOf(NullPointerException.class);
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
