@@ -72,7 +72,7 @@ class CryptoApiClientTest {
         // Assert
         assertThat(result).hasSize(1);
         assertThat(result[0].getSymbol()).isEqualTo("btc");
-        assertThat(result[0].getCurrent_price()).isEqualTo(65000.5);
+        assertThat(result[0].getCurrentPrice()).isEqualTo(65000.5);
         server.verify();
     }
 

@@ -26,22 +26,15 @@ public class CryptoApiClient {
     }
 
     public CryptoApiResponse[] fetchCryptoData() {
-        String url = config.getUrl()
-                + "?vs_currency=" + config.getVsCurrency()
-                + "&order=" + config.getOrder()
-                + "&per_page=" + config.getPerPage();
+        String url = buildRequestUrl();
 
         logger.info("Calling API with URL: {}", url);
 
-        HttpHeaders headers = new HttpHeaders();
-        String apiKey = config.getApiKey();
-        if (apiKey != null && !apiKey.isBlank()) {
-            headers.set(API_KEY_HEADER, apiKey);
-        }
+        HttpEntity<Void> request = new HttpEntity<>(buildHeaders());
 
         try {
             CryptoApiResponse[] response = restTemplate.exchange(
-                    url, HttpMethod.GET, new HttpEntity<>(headers), CryptoApiResponse[].class).getBody();
+                    url, HttpMethod.GET, request, CryptoApiResponse[].class).getBody();
 
             logger.info("API call successful, received {} records",
                     response != null ? response.length : 0);
@@ -52,5 +45,21 @@ public class CryptoApiClient {
             logger.error("Error calling crypto API", e);
             throw e;
         }
+    }
+
+    private String buildRequestUrl() {
+        return config.getUrl()
+                + "?vs_currency=" + config.getVsCurrency()
+                + "&order=" + config.getOrder()
+                + "&per_page=" + config.getPerPage();
+    }
+
+    private HttpHeaders buildHeaders() {
+        HttpHeaders headers = new HttpHeaders();
+        String apiKey = config.getApiKey();
+        if (apiKey != null && !apiKey.isBlank()) {
+            headers.set(API_KEY_HEADER, apiKey);
+        }
+        return headers;
     }
 }

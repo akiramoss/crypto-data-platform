@@ -21,10 +21,10 @@ class CryptoMapperTest {
         dto.setId("bitcoin");
         dto.setSymbol("btc");
         dto.setName("Bitcoin");
-        dto.setCurrent_price(65000.5);
-        dto.setMarket_cap(1_200_000_000.0);
-        dto.setTotal_volume(50_000_000.0);
-        dto.setLast_updated("2024-01-15T10:30:00.000Z");
+        dto.setCurrentPrice(65000.5);
+        dto.setMarketCap(1_200_000_000.0);
+        dto.setTotalVolume(50_000_000.0);
+        dto.setLastUpdated("2024-01-15T10:30:00.000Z");
         return dto;
     }
 
@@ -67,7 +67,7 @@ class CryptoMapperTest {
         // that offset instead of being normalized to UTC, it would sit ~5h away from timeStamp.
         OffsetDateTime nowInNonUtcOffset = OffsetDateTime.now(ZoneOffset.UTC).withOffsetSameInstant(ZoneOffset.ofHours(5));
         CryptoApiResponse dto = validDto();
-        dto.setLast_updated(nowInNonUtcOffset.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
+        dto.setLastUpdated(nowInNonUtcOffset.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
 
         CryptoPrice entity = CryptoMapper.toEntity(dto);
 
@@ -80,9 +80,9 @@ class CryptoMapperTest {
     void toEntity_keepsNullNumericFields_whenDtoFieldsAreNull() {
         // Arrange: last_updated must stay valid, but price/marketCap/volume are null
         CryptoApiResponse dto = validDto();
-        dto.setCurrent_price(null);
-        dto.setMarket_cap(null);
-        dto.setTotal_volume(null);
+        dto.setCurrentPrice(null);
+        dto.setMarketCap(null);
+        dto.setTotalVolume(null);
 
         // Act
         CryptoPrice entity = CryptoMapper.toEntity(dto);
@@ -102,7 +102,7 @@ class CryptoMapperTest {
         // OffsetDateTime.parse(null). CryptoService#mapToEntities still catches this per item,
         // so one such record only skips itself instead of aborting the whole batch.
         CryptoApiResponse dto = validDto();
-        dto.setLast_updated(null);
+        dto.setLastUpdated(null);
 
         assertThatThrownBy(() -> CryptoMapper.toEntity(dto))
                 .isInstanceOf(IllegalArgumentException.class);
@@ -113,7 +113,7 @@ class CryptoMapperTest {
         // Documents current behavior: an unparsable last_updated value propagates a
         // DateTimeParseException out of the mapper (not swallowed / not defaulted).
         CryptoApiResponse dto = validDto();
-        dto.setLast_updated("not-a-valid-date");
+        dto.setLastUpdated("not-a-valid-date");
 
         assertThatThrownBy(() -> CryptoMapper.toEntity(dto))
                 .isInstanceOf(DateTimeParseException.class);
@@ -125,7 +125,7 @@ class CryptoMapperTest {
         // A plain local date-time string (no offset) is rejected, which is a plausible
         // real-world input if an upstream API changes its date format.
         CryptoApiResponse dto = validDto();
-        dto.setLast_updated("2024-01-15T10:30:00");
+        dto.setLastUpdated("2024-01-15T10:30:00");
 
         assertThatThrownBy(() -> CryptoMapper.toEntity(dto))
                 .isInstanceOf(DateTimeParseException.class);

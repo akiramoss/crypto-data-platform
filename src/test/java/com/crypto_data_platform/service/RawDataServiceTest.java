@@ -70,10 +70,10 @@ class RawDataServiceTest {
         dto.setId(symbol.toLowerCase());
         dto.setSymbol(symbol);
         dto.setName(symbol);
-        dto.setCurrent_price(price);
-        dto.setMarket_cap(price * 1000);
-        dto.setTotal_volume(price * 10);
-        dto.setLast_updated("2024-01-15T10:30:00.000Z");
+        dto.setCurrentPrice(price);
+        dto.setMarketCap(price * 1000);
+        dto.setTotalVolume(price * 10);
+        dto.setLastUpdated("2024-01-15T10:30:00.000Z");
         return dto;
     }
 

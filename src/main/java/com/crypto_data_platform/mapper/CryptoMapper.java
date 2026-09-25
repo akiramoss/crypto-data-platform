@@ -11,20 +11,20 @@ public class CryptoMapper {
 
     public static CryptoPrice toEntity(CryptoApiResponse dto) {
 
-        if (dto.getLast_updated() == null) {
+        if (dto.getLastUpdated() == null) {
             throw new IllegalArgumentException("last_updated is required to map a CryptoApiResponse but was null (symbol=" + dto.getSymbol() + ")");
         }
 
         CryptoPrice entity = new CryptoPrice();
 
         entity.setSymbol(dto.getSymbol());
-        entity.setPrice(dto.getCurrent_price());
-        entity.setMarketCap(dto.getMarket_cap());
-        entity.setVolume(dto.getTotal_volume());
+        entity.setPrice(dto.getCurrentPrice());
+        entity.setMarketCap(dto.getMarketCap());
+        entity.setVolume(dto.getTotalVolume());
 
         // Event time real desde la API, normalizado a UTC (eventTime y timeStamp deben
         // quedar en la misma zona para poder compararse)
-        LocalDateTime eventTime = OffsetDateTime.parse(dto.getLast_updated())
+        LocalDateTime eventTime = OffsetDateTime.parse(dto.getLastUpdated())
                 .withOffsetSameInstant(ZoneOffset.UTC)
                 .toLocalDateTime();
 
