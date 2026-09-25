@@ -15,8 +15,8 @@ public class CryptoApiClient {
     private final RestTemplate restTemplate;
     private final CryptoApiConfig config;
 
-    public CryptoApiClient(CryptoApiConfig config) {
-        this.restTemplate = new RestTemplate();
+    public CryptoApiClient(RestTemplate restTemplate, CryptoApiConfig config) {
+        this.restTemplate = restTemplate;
         this.config = config;
     }
 

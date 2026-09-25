@@ -22,9 +22,9 @@ import static org.springframework.test.web.client.response.MockRestResponseCreat
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
 /**
- * CryptoApiClient builds its own RestTemplate internally (it is not injected), so tests replace
- * that internal instance via reflection with one bound to a MockRestServiceServer. This lets us
- * simulate CoinGecko responses (success, HTTP errors, empty body) without any real network call.
+ * CryptoApiClient now receives its RestTemplate via constructor injection, so tests build one
+ * bound to a MockRestServiceServer and pass it in directly. This lets us simulate CoinGecko
+ * responses (success, HTTP errors, empty body) without any real network call.
  */
 class CryptoApiClientTest {
 
@@ -41,11 +41,9 @@ class CryptoApiClientTest {
         ReflectionTestUtils.setField(config, "perPage", 10);
         ReflectionTestUtils.setField(config, "apiKey", "test-key");
 
-        client = new CryptoApiClient(config);
-
         RestTemplate restTemplate = new RestTemplate();
         server = MockRestServiceServer.bindTo(restTemplate).build();
-        ReflectionTestUtils.setField(client, "restTemplate", restTemplate);
+        client = new CryptoApiClient(restTemplate, config);
     }
 
     @Test
