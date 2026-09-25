@@ -6,7 +6,6 @@ import org.springframework.stereotype.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-// AUTOMATIZAR EL DATA PIPELINE
 @Component
 public class CryptoScheduler {
 
@@ -18,7 +17,7 @@ public class CryptoScheduler {
         this.service = service;
     }
 
-    @Scheduled(fixedRate = 60000) // cada 60 segundos
+    @Scheduled(fixedRateString = "${crypto.scheduler.fixed-rate-ms:300000}")
     public void runCryptoPipeline() {
 
         logger.info("Starting scheduled crypto ingestion...");
