@@ -8,6 +8,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -51,7 +52,9 @@ class NdjsonFileWriter {
             jsonLines.add(objectMapper.writeValueAsString(item));
         }
 
-        String timestamp = LocalDateTime.now().format(TIMESTAMP_FORMATTER);
+        // UTC para que el nombre del fichero coincida con eventTime/timeStamp, que también se
+        // guardan en UTC (ver CryptoMapper), independientemente de la zona horaria del sistema.
+        String timestamp = LocalDateTime.now(ZoneOffset.UTC).format(TIMESTAMP_FORMATTER);
         String fileName = directoryPath + "/" + fileNamePrefix + timestamp + ".json";
 
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(fileName))) {
