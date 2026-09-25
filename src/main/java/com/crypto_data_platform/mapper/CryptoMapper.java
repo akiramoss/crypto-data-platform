@@ -5,6 +5,7 @@ import com.crypto_data_platform.dto.CryptoApiResponse;
 
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 
 public class CryptoMapper {
 
@@ -21,12 +22,14 @@ public class CryptoMapper {
         entity.setMarketCap(dto.getMarket_cap());
         entity.setVolume(dto.getTotal_volume());
 
-        // Event time real desde la API
-        LocalDateTime eventTime = OffsetDateTime.
-                parse(dto.getLast_updated()).toLocalDateTime();
+        // Event time real desde la API, normalizado a UTC (eventTime y timeStamp deben
+        // quedar en la misma zona para poder compararse)
+        LocalDateTime eventTime = OffsetDateTime.parse(dto.getLast_updated())
+                .withOffsetSameInstant(ZoneOffset.UTC)
+                .toLocalDateTime();
 
-        // Ingestion Time (cuando guardamos los datos)
-        LocalDateTime ingestionTime = LocalDateTime.now();
+        // Ingestion Time (cuando guardamos los datos), también en UTC
+        LocalDateTime ingestionTime = LocalDateTime.now(ZoneOffset.UTC);
 
         entity.setEventTime(eventTime);
         entity.setTimeStamp(ingestionTime);

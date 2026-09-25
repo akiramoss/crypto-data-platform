@@ -4,7 +4,11 @@ import com.crypto_data_platform.domain.CryptoPrice;
 import com.crypto_data_platform.dto.CryptoApiResponse;
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -44,15 +48,32 @@ class CryptoMapperTest {
     void toEntity_setsIngestionTimestampCloseToNow() {
         // Arrange
         CryptoApiResponse dto = validDto();
-        LocalDateTime before = LocalDateTime.now();
+        LocalDateTime before = LocalDateTime.now(ZoneOffset.UTC);
 
         // Act
         CryptoPrice entity = CryptoMapper.toEntity(dto);
 
         // Assert
-        LocalDateTime after = LocalDateTime.now();
+        LocalDateTime after = LocalDateTime.now(ZoneOffset.UTC);
         assertThat(entity.getTimeStamp()).isNotNull();
         assertThat(entity.getTimeStamp()).isBetween(before.minusSeconds(1), after.plusSeconds(1));
+    }
+
+    @Test
+    void toEntity_eventTimeAndTimeStamp_areBothStoredInUtc_andComparable() {
+        // eventTime (parsed from the API's last_updated) and timeStamp (ingestion time) must
+        // both live in UTC, otherwise comparing them (e.g. computing ingestion lag) is meaningless.
+        // Here last_updated is set to "now" in a non-UTC offset (+05:00); if eventTime were kept in
+        // that offset instead of being normalized to UTC, it would sit ~5h away from timeStamp.
+        OffsetDateTime nowInNonUtcOffset = OffsetDateTime.now(ZoneOffset.UTC).withOffsetSameInstant(ZoneOffset.ofHours(5));
+        CryptoApiResponse dto = validDto();
+        dto.setLast_updated(nowInNonUtcOffset.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
+
+        CryptoPrice entity = CryptoMapper.toEntity(dto);
+
+        assertThat(Duration.between(entity.getEventTime(), entity.getTimeStamp()).abs())
+                .as("eventTime and timeStamp should both be in UTC and therefore only milliseconds apart")
+                .isLessThan(Duration.ofSeconds(2));
     }
 
     @Test

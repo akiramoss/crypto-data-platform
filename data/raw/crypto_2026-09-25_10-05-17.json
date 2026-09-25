@@ -1,0 +1,10 @@
+{"id":"bitcoin","symbol":"btc","name":"Bitcoin","current_price":84113.0,"market_cap":1.689577652067E12,"total_volume":3.7345184965E10,"last_updated":"2026-09-25T08:02:20.000Z"}
+{"id":"ethereum","symbol":"eth","name":"Ethereum","current_price":2675.12,"market_cap":3.26529359479E11,"total_volume":1.4313770082E10,"last_updated":"2026-09-25T08:02:20.000Z"}
+{"id":"tether","symbol":"usdt","name":"Tether","current_price":0.99977,"market_cap":1.83739176596E11,"total_volume":6.7679520595E10,"last_updated":"2026-09-25T08:02:20.000Z"}
+{"id":"binancecoin","symbol":"bnb","name":"BNB","current_price":774.1,"market_cap":1.03044370211E11,"total_volume":9.83973934E8,"last_updated":"2026-09-25T08:02:20.000Z"}
+{"id":"ripple","symbol":"xrp","name":"XRP","current_price":1.54,"market_cap":9.65959848E10,"total_volume":4.222656978E9,"last_updated":"2026-09-25T08:02:20.000Z"}
+{"id":"usd-coin","symbol":"usdc","name":"USDC","current_price":0.999822,"market_cap":7.5367582933E10,"total_volume":1.9384393592E10,"last_updated":"2026-09-25T08:02:20.000Z"}
+{"id":"solana","symbol":"sol","name":"Solana","current_price":116.48,"market_cap":6.8438201196E10,"total_volume":4.258038633E9,"last_updated":"2026-09-25T08:02:20.000Z"}
+{"id":"tron","symbol":"trx","name":"TRON","current_price":0.338285,"market_cap":3.2122089454E10,"total_volume":4.70621973E8,"last_updated":"2026-09-25T08:02:20.000Z"}
+{"id":"zcash","symbol":"zec","name":"Zcash","current_price":1564.47,"market_cap":2.6471342908E10,"total_volume":1.192362028E9,"last_updated":"2026-09-25T08:02:20.000Z"}
+{"id":"figure-heloc","symbol":"figr_heloc","name":"Figure Heloc","current_price":1.027,"market_cap":2.3713870381E10,"total_volume":5.87179534E8,"last_updated":"2026-09-25T08:02:20.000Z"}

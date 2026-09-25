@@ -17,7 +17,7 @@ public class CryptoScheduler {
         this.service = service;
     }
 
-    @Scheduled(fixedRateString = "${crypto.scheduler.fixed-rate-ms:60000}")
+    @Scheduled(fixedRateString = "${crypto.scheduler.fixed-rate-ms:300000}")
     public void runCryptoPipeline() {
 
         logger.info("Starting scheduled crypto ingestion...");
