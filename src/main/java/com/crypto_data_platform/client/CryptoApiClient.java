@@ -32,19 +32,16 @@ public class CryptoApiClient {
 
         HttpEntity<Void> request = new HttpEntity<>(buildHeaders());
 
-        try {
-            CryptoApiResponse[] response = restTemplate.exchange(
-                    url, HttpMethod.GET, request, CryptoApiResponse[].class).getBody();
+        // Cualquier RestClientException se propaga tal cual: CryptoService ya la captura y
+        // registra en el punto donde se decide qué hacer con el fallo, evitando loguear el
+        // mismo error dos veces.
+        CryptoApiResponse[] response = restTemplate.exchange(
+                url, HttpMethod.GET, request, CryptoApiResponse[].class).getBody();
 
-            logger.info("API call successful, received {} records",
-                    response != null ? response.length : 0);
+        logger.info("API call successful, received {} records",
+                response != null ? response.length : 0);
 
-            return response;
-
-        } catch (Exception e) {
-            logger.error("Error calling crypto API", e);
-            throw e;
-        }
+        return response;
     }
 
     private String buildRequestUrl() {
