@@ -29,6 +29,8 @@ entidades, los inserta en MySQL y guarda una copia PROCESSED en ficheros.
 - MySQL en Docker: puerto 3307 del host, base crypto_db, usuario cryptouser.
 - application.properties apunta a localhost:3307 (coincide con el puerto expuesto por Docker).
 - Los ficheros se escriben en data/raw y data/processed (ruta relativa).
+- Logging SQL de Hibernate en DEBUG/TRACE solo con el perfil "dev" activo
+  (application-dev.properties), no en el perfil por defecto.
 
 ## Convenciones
 - Inyección por constructor, nunca @Autowired en campos.
