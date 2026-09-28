@@ -2,6 +2,7 @@ package com.crypto_data_platform.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
+import org.springframework.stereotype.Component;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -19,6 +20,7 @@ import java.util.List;
  * por {@link ProcessedDataService} para evitar duplicar la lógica de
  * creación de directorios, nombrado de ficheros y escritura línea a línea.
  */
+@Component
 class NdjsonFileWriter {
 
     private static final DateTimeFormatter TIMESTAMP_FORMATTER =

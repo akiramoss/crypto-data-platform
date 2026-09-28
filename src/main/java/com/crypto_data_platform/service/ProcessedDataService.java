@@ -1,7 +1,6 @@
 package com.crypto_data_platform.service;
 
 import com.crypto_data_platform.domain.CryptoPrice;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -18,8 +17,8 @@ public class ProcessedDataService {
 
     private final NdjsonFileWriter ndjsonFileWriter;
 
-    public ProcessedDataService(ObjectMapper objectMapper) {
-        this.ndjsonFileWriter = new NdjsonFileWriter(objectMapper);
+    public ProcessedDataService(NdjsonFileWriter ndjsonFileWriter) {
+        this.ndjsonFileWriter = ndjsonFileWriter;
     }
 
     public void saveProcessedData(List<CryptoPrice> data) {

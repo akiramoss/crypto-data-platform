@@ -35,7 +35,7 @@ class ProcessedDataServiceTest {
     private final ObjectMapper objectMapper = new ObjectMapper()
             .registerModule(new JavaTimeModule())
             .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-    private final ProcessedDataService processedDataService = new ProcessedDataService(objectMapper);
+    private final ProcessedDataService processedDataService = new ProcessedDataService(new NdjsonFileWriter(objectMapper));
 
     private Set<String> filesBefore;
 

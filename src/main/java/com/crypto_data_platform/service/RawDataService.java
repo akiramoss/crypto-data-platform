@@ -1,6 +1,5 @@
 package com.crypto_data_platform.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -17,8 +16,8 @@ public class RawDataService {
 
     private final NdjsonFileWriter ndjsonFileWriter;
 
-    public RawDataService(ObjectMapper objectMapper) {
-        this.ndjsonFileWriter = new NdjsonFileWriter(objectMapper);
+    public RawDataService(NdjsonFileWriter ndjsonFileWriter) {
+        this.ndjsonFileWriter = ndjsonFileWriter;
     }
 
     public void saveRawData(Object[] data) {

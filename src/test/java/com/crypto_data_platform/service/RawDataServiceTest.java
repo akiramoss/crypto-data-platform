@@ -31,7 +31,7 @@ class RawDataServiceTest {
     private static final String RAW_DIR = "data/raw";
 
     private final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
-    private final RawDataService rawDataService = new RawDataService(objectMapper);
+    private final RawDataService rawDataService = new RawDataService(new NdjsonFileWriter(objectMapper));
 
     private Set<String> filesBefore;
 
