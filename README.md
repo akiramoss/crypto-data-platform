@@ -66,7 +66,12 @@ crypto-data-platform
 .\mvnw clean package -DskipTests
 ```
 
-## 2. Run containers
+## 2. Configure credentials (optional)
+
+Copy `.env.example` to `.env` and adjust the values if you don't want the defaults
+below. `.env` is git-ignored and read automatically by `docker-compose`.
+
+## 3. Run containers
 
 ```bash
 docker-compose up --build
@@ -90,6 +95,8 @@ docker-compose up --build
 # 🗄️ Database
 
 ### Connection
+
+Defaults (override via `.env`, see above):
 
 * Host: `localhost`
 * Port: `3307`

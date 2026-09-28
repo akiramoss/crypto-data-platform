@@ -6,10 +6,10 @@ services:
     image: mysql:8
     container_name: crypto-mysql
     environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: crypto_db
-      MYSQL_USER: cryptouser
-      MYSQL_PASSWORD: crypto123
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-crypto_db}
+      MYSQL_USER: ${DB_USERNAME:-cryptouser}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-crypto123}
     ports:
       - "3307:3306"
     volumes:
@@ -23,9 +23,9 @@ services:
     ports:
       - "8080:8080"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/crypto_db
-      SPRING_DATASOURCE_USERNAME: cryptouser
-      SPRING_DATASOURCE_PASSWORD: crypto123
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE:-crypto_db}
+      SPRING_DATASOURCE_USERNAME: ${DB_USERNAME:-cryptouser}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-crypto123}
 
 volumes:
   mysql_data:
