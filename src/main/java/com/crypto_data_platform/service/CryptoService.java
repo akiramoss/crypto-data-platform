@@ -24,13 +24,15 @@ public class CryptoService {
     private final RawDataService rawDataService;
     private final ProcessedDataService processedDataService;
     private final CryptoMapper mapper;
+    private final PriceFluctuationService fluctuationService;
 
-    public CryptoService(CryptoApiClient apiClient, CryptoRepository repository, RawDataService rawDataService, ProcessedDataService processedDataService, CryptoMapper mapper) {
+    public CryptoService(CryptoApiClient apiClient, CryptoRepository repository, RawDataService rawDataService, ProcessedDataService processedDataService, CryptoMapper mapper, PriceFluctuationService fluctuationService) {
         this.apiClient = apiClient;
         this.repository = repository;
         this.rawDataService = rawDataService;
         this.processedDataService = processedDataService;
         this.mapper = mapper;
+        this.fluctuationService = fluctuationService;
     }
 
     /**
@@ -44,6 +46,7 @@ public class CryptoService {
         try {
             CryptoApiResponse[] response = fetchFromApiAndSaveRaw();
             List<CryptoPrice> entities = mapToEntities(response);
+            fluctuationService.applyFluctuations(entities);
             persistEntitiesAndProcessedCopy(entities);
 
             logger.info("Data ingestion completed");

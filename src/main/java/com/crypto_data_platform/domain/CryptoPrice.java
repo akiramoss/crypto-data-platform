@@ -29,4 +29,11 @@ public class CryptoPrice {
 
     private LocalDateTime eventTime;
     private LocalDateTime timestamp;
+
+    /**
+     * Variación porcentual de {@code price} respecto al registro anterior almacenado para el
+     * mismo symbol (calculada por {@link com.crypto_data_platform.service.PriceFluctuationService}).
+     * {@code null} si este es el primer registro conocido de ese symbol.
+     */
+    private Double priceFluctuation;
 }

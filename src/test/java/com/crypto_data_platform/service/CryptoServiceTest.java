@@ -46,13 +46,15 @@ class CryptoServiceTest {
     private RawDataService rawDataService;
     @Mock
     private ProcessedDataService processedDataService;
+    @Mock
+    private PriceFluctuationService fluctuationService;
 
     private CryptoService cryptoService;
 
     @BeforeEach
     void setUp() {
         // CryptoMapper is pure/stateless, so a real instance is used here instead of a mock.
-        cryptoService = new CryptoService(apiClient, repository, rawDataService, processedDataService, new CryptoMapper());
+        cryptoService = new CryptoService(apiClient, repository, rawDataService, processedDataService, new CryptoMapper(), fluctuationService);
     }
 
     private CryptoApiResponse response(String symbol, double price) {
