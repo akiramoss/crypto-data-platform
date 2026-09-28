@@ -8,6 +8,7 @@ un ranking de las criptos más consistentemente alcistas.
 
 ## Stack
 - Java 17, Spring Boot 3.3, Spring Data JPA, MySQL 8, Maven (wrapper), Lombok
+- Spring Boot Actuator (health check)
 - Docker + Docker Compose
 - Tests: JUnit 5, Mockito y AssertJ (incluidos en spring-boot-starter-test)
 
@@ -32,6 +33,8 @@ un ranking de las criptos más consistentemente alcistas.
 - GET /api/cryptos/ranking?minSamples=3&limit=10 -> ranking por "densidad de ganancias": % de
                                           variaciones registradas que fueron positivas, por symbol.
                                           minSamples filtra symbols con pocos datos (default 3).
+- GET /actuator/health                -> health check (Spring Boot Actuator), incluye el estado
+                                          de la conexión a la base de datos (indicador "db").
 
 ## Comandos
 - Compilar:      ./mvnw clean package        (Windows: .\mvnw clean package)

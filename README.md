@@ -146,6 +146,13 @@ Fields:
   curl http://localhost:8080/api/cryptos/ranking
   ```
 
+* `GET /actuator/health` — health check (Spring Boot Actuator), including a `db` component that
+  reflects real connectivity to the configured database.
+
+  ```bash
+  curl http://localhost:8080/actuator/health
+  ```
+
 ---
 
 # 📁 Data Storage
