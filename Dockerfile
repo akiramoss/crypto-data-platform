@@ -1,5 +1,5 @@
-# Usamos Java 21 (igual que tu proyecto)
-FROM eclipse-temurin:21-jdk-jammy
+# Java 17 (igual que <java.version> en pom.xml); solo JRE, no hace falta el JDK completo en runtime
+FROM eclipse-temurin:17-jre-jammy
 
 # Copiamos el jar
 COPY target/crypto-data-platform-0.0.1-SNAPSHOT.jar app.jar
