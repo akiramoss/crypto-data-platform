@@ -1,7 +1,7 @@
 # Crypto Data Platform
 
-Pipeline de ingesta de datos de criptomonedas con Spring Boot. Cada 60 s el scheduler
-llama a la API de CoinGecko, guarda los datos RAW en ficheros NDJSON, los transforma a
+Pipeline de ingesta de datos de criptomonedas con Spring Boot. Cada 5 min (configurable) el
+scheduler llama a la API de CoinGecko, guarda los datos RAW en ficheros NDJSON, los transforma a
 entidades, los inserta en MySQL y guarda una copia PROCESSED en ficheros.
 
 ## Stack
@@ -17,7 +17,7 @@ entidades, los inserta en MySQL y guarda una copia PROCESSED en ficheros.
 - domain/      -> CryptoPrice: entidad JPA (único por symbol + event_time)
 - repository/  -> CryptoRepository
 - service/     -> CryptoService (orquesta el pipeline), RawDataService, ProcessedDataService
-- scheduler/   -> CryptoScheduler (@Scheduled cada 60 s)
+- scheduler/   -> CryptoScheduler (@Scheduled, intervalo en crypto.scheduler.fixed-rate-ms)
 
 ## Comandos
 - Compilar:      ./mvnw clean package        (Windows: .\mvnw clean package)
@@ -27,7 +27,7 @@ entidades, los inserta en MySQL y guarda una copia PROCESSED en ficheros.
 
 ## Entorno
 - MySQL en Docker: puerto 3307 del host, base crypto_db, usuario cryptouser.
-- application.properties apunta a localhost:3306 (no coincide con Docker).
+- application.properties apunta a localhost:3307 (coincide con el puerto expuesto por Docker).
 - Los ficheros se escriben en data/raw y data/processed (ruta relativa).
 
 ## Convenciones

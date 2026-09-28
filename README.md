@@ -93,9 +93,9 @@ docker-compose up --build
 
 * Host: `localhost`
 * Port: `3307`
-* Database: `crypto`
-* User: `root`
-* Password: `root`
+* Database: `crypto_db`
+* User: `cryptouser`
+* Password: `crypto123`
 
 ---
 
@@ -137,32 +137,21 @@ Stored after transformation for analytics or future pipelines.
 
 # ⏱️ Scheduler
 
-The system runs automatically:
+The system runs automatically, fetching crypto data every 5 minutes by default.
 
-```text
-Fetch crypto data periodically
-```
-
-You can modify frequency in:
-
-```java
-CryptoScheduler.java
-```
+You can change the frequency via the `crypto.scheduler.fixed-rate-ms` property in
+`application.properties` (value in milliseconds), no code changes needed.
 
 ---
 
 # 🧪 Notes on Testing
 
-Tests are disabled during build:
+The project has a full unit test suite (JUnit 5, Mockito, AssertJ) that mocks
+external dependencies (DB, CoinGecko API), so `./mvnw test` runs without needing
+a real database or network access.
 
-```bash
--DskipTests
-```
-
-Reason:
-
-* The project depends on external systems (DB, API)
-* Integration tests should be added later
+`-DskipTests` is used only for the Docker build command above, to keep image
+builds fast — tests are expected to be run separately via `./mvnw test`.
 
 ---
 
@@ -193,7 +182,7 @@ Reason:
 * Add Kafka (streaming)
 * Add Redis (caching)
 * Add REST endpoints for querying data
-* Add proper integration tests
+* Add integration tests (e.g. Testcontainers against a real MySQL)
 * Deploy to cloud (AWS / GCP)
 
 ---
