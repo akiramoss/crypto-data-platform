@@ -1,25 +1,19 @@
 package com.crypto_data_platform.config;
 
 import lombok.Getter;
-import org.springframework.beans.factory.annotation.Value;
+import lombok.Setter;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 @Getter
+@Setter
 @Component
+@ConfigurationProperties(prefix = "crypto.api")
 public class CryptoApiConfig {
 
-    @Value("${crypto.api.url}")
     private String url;
-
-    @Value("${crypto.api.vsCurrency}")
     private String vsCurrency;
-
-    @Value("${crypto.api.order}")
     private String order;
-
-    @Value("${crypto.api.perPage}")
     private int perPage;
-
-    @Value("${crypto.api.key}")
     private String apiKey;
 }
