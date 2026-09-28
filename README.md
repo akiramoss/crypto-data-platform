@@ -120,7 +120,7 @@ Fields:
 * market_cap
 * volume
 * event_time
-* time_stamp
+* timestamp
 
 ---
 

@@ -24,7 +24,7 @@ public class CryptoMapper {
         entity.setMarketCap(dto.getMarketCap());
         entity.setVolume(dto.getTotalVolume());
 
-        // Event time real desde la API, normalizado a UTC (eventTime y timeStamp deben
+        // Event time real desde la API, normalizado a UTC (eventTime y timestamp deben
         // quedar en la misma zona para poder compararse)
         LocalDateTime eventTime = OffsetDateTime.parse(dto.getLastUpdated())
                 .withOffsetSameInstant(ZoneOffset.UTC)
@@ -34,7 +34,7 @@ public class CryptoMapper {
         LocalDateTime ingestionTime = LocalDateTime.now(ZoneOffset.UTC);
 
         entity.setEventTime(eventTime);
-        entity.setTimeStamp(ingestionTime);
+        entity.setTimestamp(ingestionTime);
 
         return entity;
     }

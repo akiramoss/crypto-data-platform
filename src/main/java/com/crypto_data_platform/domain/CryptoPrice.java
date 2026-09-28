@@ -28,5 +28,5 @@ public class CryptoPrice {
     private Double volume;
 
     private LocalDateTime eventTime;
-    private LocalDateTime timeStamp;
+    private LocalDateTime timestamp;
 }

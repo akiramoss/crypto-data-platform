@@ -75,7 +75,7 @@ class ProcessedDataServiceTest {
         entity.setMarketCap(price * 1000);
         entity.setVolume(price * 10);
         entity.setEventTime(eventTime);
-        entity.setTimeStamp(LocalDateTime.now());
+        entity.setTimestamp(LocalDateTime.now());
         return entity;
     }
 
@@ -98,7 +98,7 @@ class ProcessedDataServiceTest {
         Map<String, Object> firstLine = objectMapper.readValue(lines.get(0), new TypeReference<>() {
         });
         assertThat(firstLine).containsEntry("symbol", "BTC");
-        assertThat(firstLine).containsKeys("eventTime", "timeStamp");
+        assertThat(firstLine).containsKeys("eventTime", "timestamp");
         // Fixed: JacksonConfig now disables SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, so
         // LocalDateTime fields serialize as a readable ISO-8601 string instead of a numeric array.
         assertThat(firstLine.get("eventTime")).isEqualTo("2024-01-15T10:30:00");

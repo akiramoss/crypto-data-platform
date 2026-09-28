@@ -38,7 +38,7 @@ class CryptoRepositoryTest {
         entity.setMarketCap(1000.0);
         entity.setVolume(10.0);
         entity.setEventTime(eventTime);
-        entity.setTimeStamp(LocalDateTime.now());
+        entity.setTimestamp(LocalDateTime.now());
         return entity;
     }
 

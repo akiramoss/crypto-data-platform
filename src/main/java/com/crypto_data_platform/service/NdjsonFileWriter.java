@@ -54,7 +54,7 @@ class NdjsonFileWriter {
             jsonLines.add(objectMapper.writeValueAsString(item));
         }
 
-        // UTC para que el nombre del fichero coincida con eventTime/timeStamp, que también se
+        // UTC para que el nombre del fichero coincida con eventTime/timestamp, que también se
         // guardan en UTC (ver CryptoMapper), independientemente de la zona horaria del sistema.
         String timestamp = LocalDateTime.now(ZoneOffset.UTC).format(TIMESTAMP_FORMATTER);
         String fileName = directoryPath + "/" + fileNamePrefix + timestamp + ".json";

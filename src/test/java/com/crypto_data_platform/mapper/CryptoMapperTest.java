@@ -57,24 +57,24 @@ class CryptoMapperTest {
 
         // Assert
         LocalDateTime after = LocalDateTime.now(ZoneOffset.UTC);
-        assertThat(entity.getTimeStamp()).isNotNull();
-        assertThat(entity.getTimeStamp()).isBetween(before.minusSeconds(1), after.plusSeconds(1));
+        assertThat(entity.getTimestamp()).isNotNull();
+        assertThat(entity.getTimestamp()).isBetween(before.minusSeconds(1), after.plusSeconds(1));
     }
 
     @Test
-    void toEntity_eventTimeAndTimeStamp_areBothStoredInUtc_andComparable() {
-        // eventTime (parsed from the API's last_updated) and timeStamp (ingestion time) must
+    void toEntity_eventTimeAndTimestamp_areBothStoredInUtc_andComparable() {
+        // eventTime (parsed from the API's last_updated) and timestamp (ingestion time) must
         // both live in UTC, otherwise comparing them (e.g. computing ingestion lag) is meaningless.
         // Here last_updated is set to "now" in a non-UTC offset (+05:00); if eventTime were kept in
-        // that offset instead of being normalized to UTC, it would sit ~5h away from timeStamp.
+        // that offset instead of being normalized to UTC, it would sit ~5h away from timestamp.
         OffsetDateTime nowInNonUtcOffset = OffsetDateTime.now(ZoneOffset.UTC).withOffsetSameInstant(ZoneOffset.ofHours(5));
         CryptoApiResponse dto = validDto();
         dto.setLastUpdated(nowInNonUtcOffset.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
 
         CryptoPrice entity = mapper.toEntity(dto);
 
-        assertThat(Duration.between(entity.getEventTime(), entity.getTimeStamp()).abs())
-                .as("eventTime and timeStamp should both be in UTC and therefore only milliseconds apart")
+        assertThat(Duration.between(entity.getEventTime(), entity.getTimestamp()).abs())
+                .as("eventTime and timestamp should both be in UTC and therefore only milliseconds apart")
                 .isLessThan(Duration.ofSeconds(2));
     }
 
