@@ -34,11 +34,12 @@ It fetches cryptocurrency data from CoinGecko, processes it, stores it in a MySQ
 crypto-data-platform
 │
 ├── client        → API calls
-├── dto           → API response objects
+├── controller    → Own REST API (query data, ranking)
+├── dto           → API/response objects
 ├── mapper        → DTO → Entity conversion
 ├── domain        → Database entities
 ├── repository    → JPA repositories
-├── service       → Business logic
+├── service       → Business logic (ingestion, fluctuation, ranking)
 ├── scheduler     → Automated data ingestion
 ├── data
 │   ├── raw       → Raw JSON (NDJSON format)
@@ -52,7 +53,7 @@ crypto-data-platform
 1. Fetch data from API
 2. Convert DTO → Entity
 3. Store RAW data (JSON)
-4. Process data
+4. Calculate price fluctuation vs. the previous stored record for that symbol
 5. Save into MySQL
 6. Save processed data
 
@@ -121,6 +122,29 @@ Fields:
 * volume
 * event_time
 * timestamp
+* price_fluctuation — % change vs. the previous stored record for the same symbol (`null` for a
+  symbol's first-ever record)
+
+---
+
+# 🔌 REST API
+
+* `GET /api/cryptos/{symbol}` — price history for that symbol (newest first), including its
+  fluctuation. Symbols are matched case-insensitively. Returns an empty list (not a 404) if the
+  symbol has no data yet.
+
+  ```bash
+  curl http://localhost:8080/api/cryptos/btc
+  ```
+
+* `GET /api/cryptos/ranking?minSamples=3&limit=10` — ranks all symbols by "gain density": the
+  percentage of their recorded fluctuations that were positive (i.e. how consistently a coin goes
+  up from one session to the next). `minSamples` (default 3) excludes symbols with too little
+  history to be meaningful; `limit` (default 10) caps the result size.
+
+  ```bash
+  curl http://localhost:8080/api/cryptos/ranking
+  ```
 
 ---
 
@@ -166,6 +190,9 @@ builds fast — tests are expected to be run separately via `./mvnw test`.
 
 * Real API integration
 * Batch data processing
+* Price fluctuation tracking per symbol, session over session
+* "Gain density" ranking of the most consistently rising coins
+* REST API to query a coin's history and the ranking
 * Duplicate handling via DB constraints
 * File-based raw data storage
 * Dockerized environment
@@ -188,7 +215,6 @@ builds fast — tests are expected to be run separately via `./mvnw test`.
 
 * Add Kafka (streaming)
 * Add Redis (caching)
-* Add REST endpoints for querying data
 * Add integration tests (e.g. Testcontainers against a real MySQL)
 * Deploy to cloud (AWS / GCP)
 

@@ -2,7 +2,9 @@
 
 Pipeline de ingesta de datos de criptomonedas con Spring Boot. Cada 5 min (configurable) el
 scheduler llama a la API de CoinGecko, guarda los datos RAW en ficheros NDJSON, los transforma a
-entidades, los inserta en MySQL y guarda una copia PROCESSED en ficheros.
+entidades, calcula la variación de precio respecto a la sesión anterior, las inserta en MySQL y
+guarda una copia PROCESSED en ficheros. Una API REST permite consultar el histórico por symbol y
+un ranking de las criptos más consistentemente alcistas.
 
 ## Stack
 - Java 17, Spring Boot 3.3, Spring Data JPA, MySQL 8, Maven (wrapper), Lombok
@@ -12,12 +14,24 @@ entidades, los inserta en MySQL y guarda una copia PROCESSED en ficheros.
 ## Estructura (paquete com.crypto_data_platform)
 - client/      -> CryptoApiClient: llamada HTTP a CoinGecko (RestTemplate)
 - config/      -> CryptoApiConfig (propiedades crypto.api.*), JacksonConfig
-- dto/         -> CryptoApiResponse: respuesta de la API
+- controller/  -> CryptoController: API REST propia (GET /api/cryptos/{symbol}, /ranking)
+- dto/         -> CryptoApiResponse (respuesta de CoinGecko), CryptoPriceResponse y
+                   CryptoRankingEntry (respuestas de nuestra propia API REST)
 - mapper/      -> CryptoMapper: DTO -> entidad
 - domain/      -> CryptoPrice: entidad JPA (único por symbol + event_time)
 - repository/  -> CryptoRepository
-- service/     -> CryptoService (orquesta el pipeline), RawDataService, ProcessedDataService
+- service/     -> CryptoService (orquesta el pipeline), RawDataService, ProcessedDataService,
+                   PriceFluctuationService (variación % vs. sesión anterior por symbol),
+                   CryptoRankingService (ranking de "densidad de ganancias")
 - scheduler/   -> CryptoScheduler (@Scheduled, intervalo en crypto.scheduler.fixed-rate-ms)
+
+## API REST
+- GET /api/cryptos/{symbol}          -> histórico de precios de ese symbol, más reciente primero,
+                                          con su priceFluctuation (% vs. registro anterior). Lista
+                                          vacía (200) si el symbol no tiene datos aún.
+- GET /api/cryptos/ranking?minSamples=3&limit=10 -> ranking por "densidad de ganancias": % de
+                                          variaciones registradas que fueron positivas, por symbol.
+                                          minSamples filtra symbols con pocos datos (default 3).
 
 ## Comandos
 - Compilar:      ./mvnw clean package        (Windows: .\mvnw clean package)
