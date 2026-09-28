@@ -24,6 +24,9 @@ public class CryptoScheduler {
         try {
             service.fetchAndSaveCryptoData();
         } catch (Exception e) {
+            // Última red de seguridad: CryptoService ya maneja los fallos esperados
+            // (API, BD); esto solo debe activarse ante un error de programación
+            // inesperado, y nunca debe tumbar el hilo del scheduler.
             logger.error("Scheduler ERROR:", e);
         }
         logger.info("Finished scheduled crypto ingestion");

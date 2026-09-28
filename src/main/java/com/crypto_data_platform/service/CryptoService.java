@@ -5,7 +5,9 @@ import com.crypto_data_platform.domain.CryptoPrice;
 import com.crypto_data_platform.dto.CryptoApiResponse;
 import com.crypto_data_platform.mapper.CryptoMapper;
 import com.crypto_data_platform.repository.CryptoRepository;
+import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClientException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,7 +46,7 @@ public class CryptoService {
 
             logger.info("Data ingestion completed");
 
-        } catch (Exception e) {
+        } catch (RestClientException e) {
             logger.error("ERROR during crypto ingestion", e);
         }
     }
@@ -91,7 +93,7 @@ public class CryptoService {
 
         try {
             repository.saveAll(newEntities);
-        } catch (Exception e) {
+        } catch (DataAccessException e) {
             logger.error("Unexpected error while persisting crypto entities", e);
         }
 

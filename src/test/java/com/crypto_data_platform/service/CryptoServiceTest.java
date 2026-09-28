@@ -10,6 +10,8 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.dao.DataAccessResourceFailureException;
+import org.springframework.web.client.ResourceAccessException;
 
 import java.util.List;
 
@@ -191,9 +193,11 @@ class CryptoServiceTest {
         // Fixed: an unexpected repository failure (unrelated to duplicates, e.g. a transient DB
         // error) is now caught on its own and no longer prevents the PROCESSED copy from being
         // saved, since saveProcessedData(...) is called unconditionally afterwards.
+        // CryptoService only catches DataAccessException here (see CryptoService#persistEntitiesAndProcessedCopy),
+        // matching what Spring Data repositories actually throw on a transient DB failure.
         CryptoApiResponse[] apiResponse = {response("BTC", 65000.5), response("ETH", 3200.1)};
         when(apiClient.fetchCryptoData()).thenReturn(apiResponse);
-        doThrow(new RuntimeException("simulated transient DB failure"))
+        doThrow(new DataAccessResourceFailureException("simulated transient DB failure"))
                 .when(repository).saveAll(anyList());
 
         // Act
@@ -207,8 +211,10 @@ class CryptoServiceTest {
     @Test
     void fetchAndSaveCryptoData_apiClientThrows_noDownstreamCollaboratorIsCalled() {
         // Arrange: simulate a network/HTTP failure surfaced by CryptoApiClient (see CryptoApiClientTest).
+        // CryptoService only catches RestClientException at the top level (see
+        // CryptoService#fetchAndSaveCryptoData), matching what CryptoApiClient/RestTemplate actually throw.
         when(apiClient.fetchCryptoData())
-                .thenThrow(new RuntimeException("simulated API failure"));
+                .thenThrow(new ResourceAccessException("simulated API failure"));
 
         // Act
         assertThatCode(() -> cryptoService.fetchAndSaveCryptoData()).doesNotThrowAnyException();
