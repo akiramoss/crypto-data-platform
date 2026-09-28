@@ -12,7 +12,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class CryptoService {
@@ -87,13 +89,22 @@ public class CryptoService {
     }
 
     private void persistEntitiesAndProcessedCopy(List<CryptoPrice> entities) {
-        List<CryptoPrice> newEntities = entities.stream()
+        // Deduplicamos por (symbol, eventTime) DENTRO del propio lote antes de comprobar contra BD:
+        // si la API devolviera dos registros con la misma clave en la misma respuesta, ambos
+        // pasarían el pre-check de "ya existe en BD" (todavía no existe ninguno) y llegarían juntos
+        // a saveAll(...), donde la restricción única los rechazaría a los DOS Y a cualquier otro
+        // symbol del mismo lote, perdiendo la persistencia de todo el ciclo en vez de solo del
+        // duplicado.
+        List<CryptoPrice> deduplicated = deduplicateBySymbolAndEventTime(entities);
+
+        List<CryptoPrice> newEntities = deduplicated.stream()
                 .filter(entity -> !repository.existsBySymbolAndEventTime(entity.getSymbol(), entity.getEventTime()))
                 .toList();
 
-        if (newEntities.size() < entities.size()) {
-            logger.warn("Skipped {} duplicate record(s) already present in the database",
-                    entities.size() - newEntities.size());
+        int skipped = entities.size() - newEntities.size();
+        if (skipped > 0) {
+            logger.warn("Skipped {} duplicate record(s) (already in the database or duplicated within this batch)",
+                    skipped);
         }
 
         try {
@@ -105,5 +116,13 @@ public class CryptoService {
         // La copia PROCESSED refleja siempre lo que se ha procesado en este ciclo,
         // independientemente de si algún registro ya existía en BD.
         processedDataService.saveProcessedData(entities);
+    }
+
+    private List<CryptoPrice> deduplicateBySymbolAndEventTime(List<CryptoPrice> entities) {
+        Map<String, CryptoPrice> uniqueByKey = new LinkedHashMap<>();
+        for (CryptoPrice entity : entities) {
+            uniqueByKey.putIfAbsent(entity.getSymbol() + "|" + entity.getEventTime(), entity);
+        }
+        return new ArrayList<>(uniqueByKey.values());
     }
 }

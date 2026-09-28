@@ -213,6 +213,43 @@ class CryptoServiceTest {
     }
 
     @Test
+    void fetchAndSaveCryptoData_intraBatchDuplicate_isDeduplicated_othersStillPersisted() {
+        // Regression test: CryptoService.persistEntitiesAndProcessedCopy() (CryptoService.java) now
+        // deduplicates by (symbol, eventTime) WITHIN the incoming batch, before checking against the
+        // DB. Previously, two records sharing the same symbol+eventTime in a single API response
+        // both passed the "not already in DB" pre-check and were sent to repository.saveAll(...)
+        // together, so the (symbol, event_time) unique constraint would reject the WHOLE batch,
+        // taking down unrelated valid entities (e.g. ETH below) with it. Now only the first of the
+        // duplicate pair is kept, so saveAll(...) never sees a colliding pair and the rest of the
+        // batch persists normally.
+        CryptoApiResponse duplicateBtc1 = response("BTC", 65000.5);
+        CryptoApiResponse duplicateBtc2 = response("BTC", 65000.5);
+        CryptoApiResponse eth = response("ETH", 3200.1);
+        CryptoApiResponse[] apiResponse = {duplicateBtc1, duplicateBtc2, eth};
+        when(apiClient.fetchCryptoData()).thenReturn(apiResponse);
+        when(repository.existsBySymbolAndEventTime(eq("BTC"), any())).thenReturn(false);
+        when(repository.existsBySymbolAndEventTime(eq("ETH"), any())).thenReturn(false);
+
+        // Act
+        assertThatCode(() -> cryptoService.fetchAndSaveCryptoData()).doesNotThrowAnyException();
+
+        // Assert: only one BTC (the first of the duplicate pair) and the ETH entry reach saveAll...
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<CryptoPrice>> captor = ArgumentCaptor.forClass(List.class);
+        verify(repository).saveAll(captor.capture());
+        assertThat(captor.getValue()).extracting(CryptoPrice::getSymbol)
+                .containsExactly("BTC", "ETH");
+
+        // ...while the PROCESSED copy still reflects everything fetched this cycle, duplicates
+        // included, since it documents what was fetched, not what was persisted.
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<CryptoPrice>> processedCaptor = ArgumentCaptor.forClass(List.class);
+        verify(processedDataService).saveProcessedData(processedCaptor.capture());
+        assertThat(processedCaptor.getValue()).extracting(CryptoPrice::getSymbol)
+                .containsExactly("BTC", "BTC", "ETH");
+    }
+
+    @Test
     void fetchAndSaveCryptoData_apiClientThrows_noDownstreamCollaboratorIsCalled() {
         // Arrange: simulate a network/HTTP failure surfaced by CryptoApiClient (see CryptoApiClientTest).
         // CryptoService only catches RestClientException at the top level (see
