@@ -146,6 +146,59 @@ class CryptoRepositoryTest {
         assertThat(ethStats.getPositiveCount()).isEqualTo(1L);
     }
 
+    @Test
+    void aggregateFluctuationStatsBySymbol_treatsExactlyZeroFluctuation_asNotPositive() {
+        // Boundary check on the JPQL "c.priceFluctuation > 0" predicate (CryptoRepository.java:20):
+        // an unchanged price (fluctuation == 0.0) must count towards totalCount but NOT towards
+        // positiveCount. A ">=" instead of ">" here would silently inflate every symbol's gain
+        // density with "no change" sessions.
+        repository.saveAndFlush(fluctuatingPriceOf("BTC", LocalDateTime.of(2024, 1, 1, 0, 0), 0.0));
+        repository.saveAndFlush(fluctuatingPriceOf("BTC", LocalDateTime.of(2024, 1, 2, 0, 0), 5.0));
+
+        List<CryptoRepository.SymbolFluctuationStats> stats = repository.aggregateFluctuationStatsBySymbol();
+
+        CryptoRepository.SymbolFluctuationStats btcStats = stats.stream()
+                .filter(s -> s.getSymbol().equals("BTC")).findFirst().orElseThrow();
+        assertThat(btcStats.getTotalCount()).isEqualTo(2L);
+        assertThat(btcStats.getPositiveCount()).isEqualTo(1L);
+    }
+
+    @Test
+    void aggregateFluctuationStatsBySymbol_treatsDifferentCasing_asDistinctSymbols_onH2() {
+        // ENVIRONMENT GAP (not a production bug per se, but a test-vs-prod divergence risk):
+        // under H2 (this test's application-test.properties uses MODE=MySQL, but MODE only changes
+        // SQL *syntax* compatibility, not collation), VARCHAR comparison/GROUP BY is case-sensitive,
+        // so "BTC" and "btc" are aggregated as two separate symbols here. Real MySQL's default
+        // collation (case-insensitive, e.g. utf8mb4_0900_ai_ci) would instead fold them into a
+        // single GROUP BY bucket. In practice this is currently masked because CoinGecko symbols
+        // and CryptoMapper always produce lowercase symbols, but it means this @DataJpaTest/H2 slice
+        // cannot catch a casing-related aggregation bug that could appear only against real MySQL.
+        repository.saveAndFlush(fluctuatingPriceOf("BTC", LocalDateTime.of(2024, 1, 1, 0, 0), 5.0));
+        repository.saveAndFlush(fluctuatingPriceOf("btc", LocalDateTime.of(2024, 1, 2, 0, 0), 3.0));
+
+        List<CryptoRepository.SymbolFluctuationStats> stats = repository.aggregateFluctuationStatsBySymbol();
+
+        assertThat(stats).extracting(CryptoRepository.SymbolFluctuationStats::getSymbol)
+                .containsExactlyInAnyOrder("BTC", "btc");
+    }
+
+    @Test
+    void save_allowsSameEventTime_forSymbolsDifferingOnlyByCasing_onH2() {
+        // Same underlying environment gap as above, applied to the unique constraint
+        // (symbol, event_time) declared in CryptoPrice.java:18: H2's case-sensitive comparison lets
+        // "BTC" and "btc" coexist at the same event_time. Under real MySQL's case-insensitive
+        // default collation, this second insert would instead collide with the first and throw a
+        // DataIntegrityViolationException. Not asserted as a failure here (H2 genuinely allows it);
+        // documented so this divergence is not mistaken for full unique-constraint coverage.
+        LocalDateTime sameEventTime = LocalDateTime.of(2024, 1, 15, 10, 30);
+        repository.saveAndFlush(priceOf("BTC", sameEventTime));
+
+        CryptoPrice second = repository.saveAndFlush(priceOf("btc", sameEventTime));
+
+        assertThat(second.getId()).isNotNull();
+        assertThat(repository.findAll()).hasSize(2);
+    }
+
     private static CryptoPrice fluctuatingPriceOf(String symbol, LocalDateTime eventTime, Double fluctuation) {
         CryptoPrice entity = priceOf(symbol, eventTime);
         entity.setPriceFluctuation(fluctuation);

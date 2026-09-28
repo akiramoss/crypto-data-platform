@@ -114,6 +114,36 @@ class PriceFluctuationServiceTest {
     }
 
     @Test
+    void applyFluctuations_setsZero_whenPriceIsUnchanged() {
+        // Edge case around the previousPrice == 0 short-circuit in calculateFluctuation(): a
+        // genuine (non-zero) unchanged price must yield 0.0, not null and not be mistaken for the
+        // "no previous price" case.
+        when(repository.findTopBySymbolOrderByEventTimeDesc("BTC"))
+                .thenReturn(Optional.of(priceOf("BTC", 100.0)));
+        CryptoPrice entity = priceOf("BTC", 100.0);
+
+        fluctuationService.applyFluctuations(List.of(entity));
+
+        assertThat(entity.getPriceFluctuation()).isNotNull().isCloseTo(0.0, offset(0.0001));
+    }
+
+    @Test
+    void applyFluctuations_fallsBackToDbLookup_whenEarlierRecordInSameBatchHadNullPrice() {
+        // If the first record of a symbol within the batch carries a null price, it must not
+        // "poison" the in-batch cache with a null: the next record for that same symbol should
+        // still fall back to the last known DB price, not be treated as "no previous price".
+        when(repository.findTopBySymbolOrderByEventTimeDesc("BTC"))
+                .thenReturn(Optional.of(priceOf("BTC", 100.0)));
+        CryptoPrice firstWithNullPrice = priceOf("BTC", null);
+        CryptoPrice second = priceOf("BTC", 110.0);
+
+        fluctuationService.applyFluctuations(List.of(firstWithNullPrice, second));
+
+        assertThat(firstWithNullPrice.getPriceFluctuation()).isNull();
+        assertThat(second.getPriceFluctuation()).isCloseTo(10.0, offset(0.0001));
+    }
+
+    @Test
     void applyFluctuations_looksUpEachSymbolIndependently() {
         when(repository.findTopBySymbolOrderByEventTimeDesc(eq("BTC")))
                 .thenReturn(Optional.of(priceOf("BTC", 100.0)));
