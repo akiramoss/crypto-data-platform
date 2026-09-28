@@ -132,4 +132,67 @@ class CryptoMapperTest {
         assertThatThrownBy(() -> mapper.toEntity(dto))
                 .isInstanceOf(DateTimeParseException.class);
     }
+
+    @Test
+    void toEntity_keepsNegativePrice_withoutValidationOrRejection() {
+        // Documents current behavior: CryptoMapper performs no sanity/range validation on
+        // numeric fields. A negative current_price (e.g. a corrupt/erroneous upstream payload,
+        // since real crypto prices are never negative) is copied through as-is, not rejected.
+        CryptoApiResponse dto = validDto();
+        dto.setCurrentPrice(-100.0);
+
+        CryptoPrice entity = mapper.toEntity(dto);
+
+        assertThat(entity.getPrice()).isEqualTo(-100.0);
+    }
+
+    @Test
+    void toEntity_keepsExtremeMarketCapAndVolume_withoutOverflowOrTruncation() {
+        // Arrange: Double.MAX_VALUE and a very small (but non-zero) positive value, to check
+        // there is no silent overflow/underflow/truncation across the DTO -> entity copy.
+        CryptoApiResponse dto = validDto();
+        dto.setMarketCap(Double.MAX_VALUE);
+        dto.setTotalVolume(Double.MIN_VALUE);
+
+        CryptoPrice entity = mapper.toEntity(dto);
+
+        assertThat(entity.getMarketCap()).isEqualTo(Double.MAX_VALUE);
+        assertThat(entity.getVolume()).isEqualTo(Double.MIN_VALUE);
+    }
+
+    @Test
+    void toEntity_keepsSymbolAsGiven_withUnicodeCharacters_noNormalizationOrValidation() {
+        // CryptoMapper does not lowercase, trim or validate the symbol in any way (that
+        // normalization only happens later, in CryptoController#getBySymbol via Locale.ROOT
+        // lowercasing). An unusual symbol value is carried through unchanged.
+        CryptoApiResponse dto = validDto();
+        dto.setSymbol("₿-Ω_test 🚀");
+
+        CryptoPrice entity = mapper.toEntity(dto);
+
+        assertThat(entity.getSymbol()).isEqualTo("₿-Ω_test 🚀");
+    }
+
+    @Test
+    void toEntity_keepsEmptySymbol_asEmptyString_withoutRejection() {
+        CryptoApiResponse dto = validDto();
+        dto.setSymbol("");
+
+        CryptoPrice entity = mapper.toEntity(dto);
+
+        assertThat(entity.getSymbol()).isEmpty();
+    }
+
+    @Test
+    void toEntity_keepsNullSymbol_withoutThrowing() {
+        // A null symbol only appears in the thrown message of the last_updated == null branch
+        // (string concatenation just prints "null"); when last_updated IS present, a null symbol
+        // does not trigger any validation at all and is copied through as null.
+        CryptoApiResponse dto = validDto();
+        dto.setSymbol(null);
+
+        CryptoPrice entity = mapper.toEntity(dto);
+
+        assertThat(entity.getSymbol()).isNull();
+    }
 }

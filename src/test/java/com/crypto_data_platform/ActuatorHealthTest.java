@@ -42,4 +42,30 @@ class ActuatorHealthTest {
         // including the auto-configured DataSource ("db") health indicator.
         assertThat(response.getBody()).contains("\"db\"");
     }
+
+    @Test
+    void actuator_exposesOnlyHealthEndpoint_notEnvBeansOrOtherSensitiveEndpoints() {
+        // application.properties only sets management.endpoint.health.show-details=always and does
+        // NOT set management.endpoints.web.exposure.include, so Spring Boot's default (only
+        // "health") applies. This test pins that down: other actuator endpoints that are always
+        // auto-configured on the classpath (env, beans, etc.) must stay unreachable over HTTP,
+        // since they could otherwise leak configuration/secrets or internal wiring details.
+        ResponseEntity<String> envResponse = restTemplate.getForEntity("/actuator/env", String.class);
+        ResponseEntity<String> beansResponse = restTemplate.getForEntity("/actuator/beans", String.class);
+        ResponseEntity<String> mappingsResponse = restTemplate.getForEntity("/actuator/mappings", String.class);
+
+        assertThat(envResponse.getStatusCode().value()).isEqualTo(404);
+        assertThat(beansResponse.getStatusCode().value()).isEqualTo(404);
+        assertThat(mappingsResponse.getStatusCode().value()).isEqualTo(404);
+    }
+
+    @Test
+    void actuator_rootDiscoveryPage_onlyLinksToHealth() {
+        ResponseEntity<String> response = restTemplate.getForEntity("/actuator", String.class);
+
+        assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
+        assertThat(response.getBody()).contains("\"health\"");
+        assertThat(response.getBody()).doesNotContain("\"env\"");
+        assertThat(response.getBody()).doesNotContain("\"beans\"");
+    }
 }
