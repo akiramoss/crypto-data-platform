@@ -23,12 +23,14 @@ public class CryptoService {
     private final CryptoRepository repository;
     private final RawDataService rawDataService;
     private final ProcessedDataService processedDataService;
+    private final CryptoMapper mapper;
 
-    public CryptoService(CryptoApiClient apiClient, CryptoRepository repository, RawDataService rawDataService, ProcessedDataService processedDataService) {
+    public CryptoService(CryptoApiClient apiClient, CryptoRepository repository, RawDataService rawDataService, ProcessedDataService processedDataService, CryptoMapper mapper) {
         this.apiClient = apiClient;
         this.repository = repository;
         this.rawDataService = rawDataService;
         this.processedDataService = processedDataService;
+        this.mapper = mapper;
     }
 
     /**
@@ -71,7 +73,7 @@ public class CryptoService {
 
         for (CryptoApiResponse dto : response) {
             try {
-                entities.add(CryptoMapper.toEntity(dto));
+                entities.add(mapper.toEntity(dto));
             } catch (Exception e) {
                 logger.warn("Skipping malformed record symbol={}: {}", dto.getSymbol(), e.getMessage());
             }

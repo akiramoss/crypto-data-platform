@@ -3,6 +3,7 @@ package com.crypto_data_platform.service;
 import com.crypto_data_platform.client.CryptoApiClient;
 import com.crypto_data_platform.domain.CryptoPrice;
 import com.crypto_data_platform.dto.CryptoApiResponse;
+import com.crypto_data_platform.mapper.CryptoMapper;
 import com.crypto_data_platform.repository.CryptoRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -50,7 +51,8 @@ class CryptoServiceTest {
 
     @BeforeEach
     void setUp() {
-        cryptoService = new CryptoService(apiClient, repository, rawDataService, processedDataService);
+        // CryptoMapper is pure/stateless, so a real instance is used here instead of a mock.
+        cryptoService = new CryptoService(apiClient, repository, rawDataService, processedDataService, new CryptoMapper());
     }
 
     private CryptoApiResponse response(String symbol, double price) {

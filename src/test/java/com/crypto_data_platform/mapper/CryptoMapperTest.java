@@ -16,6 +16,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class CryptoMapperTest {
 
+    private final CryptoMapper mapper = new CryptoMapper();
+
     private static CryptoApiResponse validDto() {
         CryptoApiResponse dto = new CryptoApiResponse();
         dto.setId("bitcoin");
@@ -34,7 +36,7 @@ class CryptoMapperTest {
         CryptoApiResponse dto = validDto();
 
         // Act
-        CryptoPrice entity = CryptoMapper.toEntity(dto);
+        CryptoPrice entity = mapper.toEntity(dto);
 
         // Assert
         assertThat(entity.getSymbol()).isEqualTo("btc");
@@ -51,7 +53,7 @@ class CryptoMapperTest {
         LocalDateTime before = LocalDateTime.now(ZoneOffset.UTC);
 
         // Act
-        CryptoPrice entity = CryptoMapper.toEntity(dto);
+        CryptoPrice entity = mapper.toEntity(dto);
 
         // Assert
         LocalDateTime after = LocalDateTime.now(ZoneOffset.UTC);
@@ -69,7 +71,7 @@ class CryptoMapperTest {
         CryptoApiResponse dto = validDto();
         dto.setLastUpdated(nowInNonUtcOffset.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
 
-        CryptoPrice entity = CryptoMapper.toEntity(dto);
+        CryptoPrice entity = mapper.toEntity(dto);
 
         assertThat(Duration.between(entity.getEventTime(), entity.getTimeStamp()).abs())
                 .as("eventTime and timeStamp should both be in UTC and therefore only milliseconds apart")
@@ -85,7 +87,7 @@ class CryptoMapperTest {
         dto.setTotalVolume(null);
 
         // Act
-        CryptoPrice entity = CryptoMapper.toEntity(dto);
+        CryptoPrice entity = mapper.toEntity(dto);
 
         // Assert
         assertThat(entity.getPrice()).isNull();
@@ -104,7 +106,7 @@ class CryptoMapperTest {
         CryptoApiResponse dto = validDto();
         dto.setLastUpdated(null);
 
-        assertThatThrownBy(() -> CryptoMapper.toEntity(dto))
+        assertThatThrownBy(() -> mapper.toEntity(dto))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -115,7 +117,7 @@ class CryptoMapperTest {
         CryptoApiResponse dto = validDto();
         dto.setLastUpdated("not-a-valid-date");
 
-        assertThatThrownBy(() -> CryptoMapper.toEntity(dto))
+        assertThatThrownBy(() -> mapper.toEntity(dto))
                 .isInstanceOf(DateTimeParseException.class);
     }
 
@@ -127,7 +129,7 @@ class CryptoMapperTest {
         CryptoApiResponse dto = validDto();
         dto.setLastUpdated("2024-01-15T10:30:00");
 
-        assertThatThrownBy(() -> CryptoMapper.toEntity(dto))
+        assertThatThrownBy(() -> mapper.toEntity(dto))
                 .isInstanceOf(DateTimeParseException.class);
     }
 }
