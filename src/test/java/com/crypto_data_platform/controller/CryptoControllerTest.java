@@ -4,6 +4,8 @@ import com.crypto_data_platform.domain.CryptoPrice;
 import com.crypto_data_platform.dto.CryptoRankingEntry;
 import com.crypto_data_platform.repository.CryptoRepository;
 import com.crypto_data_platform.service.CryptoRankingService;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,8 +16,11 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Locale;
 
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -37,6 +42,20 @@ class CryptoControllerTest {
     private CryptoRepository repository;
     @MockBean
     private CryptoRankingService rankingService;
+
+    private Locale originalDefaultLocale;
+
+    @BeforeEach
+    void captureDefaultLocale() {
+        originalDefaultLocale = Locale.getDefault();
+    }
+
+    @AfterEach
+    void restoreDefaultLocale() {
+        // Locale.getDefault() is process-wide mutable state; restore it so other tests in the
+        // suite (run in the same JVM) are never affected by what happens in this test class.
+        Locale.setDefault(originalDefaultLocale);
+    }
 
     private static CryptoPrice priceOf(String symbol, double price, double fluctuation) {
         CryptoPrice entity = new CryptoPrice();
@@ -96,5 +115,33 @@ class CryptoControllerTest {
 
         mockMvc.perform(get("/api/cryptos/ranking?minSamples=5&limit=3"))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    void getRanking_returnsBadRequest_whenLimitIsNegative() throws Exception {
+        // Regression test: CryptoController.getRanking now validates `limit` before calling
+        // CryptoRankingService.getTopPerformers (which delegates to Stream.limit(long) and would
+        // throw IllegalArgumentException for a negative value). A negative limit must be rejected
+        // with a clean 400 Bad Request, and the service must never even be invoked.
+        mockMvc.perform(get("/api/cryptos/ranking?limit=-1"))
+                .andExpect(status().isBadRequest());
+
+        verify(rankingService, org.mockito.Mockito.never()).getTopPerformers(anyInt(), anyInt());
+    }
+
+    @Test
+    void getBySymbol_lowercasesCorrectly_regardlessOfDefaultLocale() throws Exception {
+        // Regression test: CryptoController.getBySymbol uses Locale.ROOT to lowercase the symbol,
+        // avoiding the "Turkish-I problem" where "PI".toLowerCase() under the Turkish locale
+        // produces "pı" (dotless i) instead of "pi", which would silently miss data stored under
+        // the correct lowercase symbol "pi" (e.g. the real PI / Pi Network ticker).
+        Locale.setDefault(Locale.forLanguageTag("tr-TR"));
+        when(repository.findBySymbolOrderByEventTimeDesc(org.mockito.ArgumentMatchers.anyString()))
+                .thenReturn(List.of());
+
+        mockMvc.perform(get("/api/cryptos/PI")).andExpect(status().isOk());
+
+        verify(repository).findBySymbolOrderByEventTimeDesc(eq("pi"));
+        verify(repository, org.mockito.Mockito.never()).findBySymbolOrderByEventTimeDesc(eq("pı"));
     }
 }
