@@ -1,7 +1,9 @@
 package com.crypto_data_platform.controller;
 
 import com.crypto_data_platform.domain.CryptoPrice;
+import com.crypto_data_platform.dto.CryptoRankingEntry;
 import com.crypto_data_platform.repository.CryptoRepository;
+import com.crypto_data_platform.service.CryptoRankingService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,6 +35,8 @@ class CryptoControllerTest {
 
     @MockBean
     private CryptoRepository repository;
+    @MockBean
+    private CryptoRankingService rankingService;
 
     private static CryptoPrice priceOf(String symbol, double price, double fluctuation) {
         CryptoPrice entity = new CryptoPrice();
@@ -73,5 +77,24 @@ class CryptoControllerTest {
         mockMvc.perform(get("/api/cryptos/doge"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", org.hamcrest.Matchers.hasSize(0)));
+    }
+
+    @Test
+    void getRanking_usesDefaultMinSamplesAndLimit_whenNoQueryParamsGiven() throws Exception {
+        when(rankingService.getTopPerformers(CryptoRankingService.DEFAULT_MIN_SAMPLES, CryptoRankingService.DEFAULT_LIMIT))
+                .thenReturn(List.of(new CryptoRankingEntry("btc", 10, 8, 80.0)));
+
+        mockMvc.perform(get("/api/cryptos/ranking"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].symbol").value("btc"))
+                .andExpect(jsonPath("$[0].gainDensityPercentage").value(80.0));
+    }
+
+    @Test
+    void getRanking_forwardsCustomMinSamplesAndLimit_fromQueryParams() throws Exception {
+        when(rankingService.getTopPerformers(5, 3)).thenReturn(List.of());
+
+        mockMvc.perform(get("/api/cryptos/ranking?minSamples=5&limit=3"))
+                .andExpect(status().isOk());
     }
 }
