@@ -1,6 +1,20 @@
 # 🚀 Crypto Data Platform
 
-A scalable **data engineering project** built with **Spring Boot**, designed to ingest, process, and store cryptocurrency market data using a real API.
+A scalable **data engineering project** built with **Spring Boot**, designed to ingest, process, and store cryptocurrency market data using a real API — with a React dashboard to visualize it.
+
+![Java](https://img.shields.io/badge/Java-17-ED8B00?logo=openjdk&logoColor=white)
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.3-6DB33F?logo=springboot&logoColor=white)
+![Spring Data JPA](https://img.shields.io/badge/Spring%20Data-JPA-6DB33F?logo=spring&logoColor=white)
+![MySQL](https://img.shields.io/badge/MySQL-8-4479A1?logo=mysql&logoColor=white)
+![Maven](https://img.shields.io/badge/Maven-build-C71A36?logo=apachemaven&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)
+![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)
+![Vite](https://img.shields.io/badge/Vite-8-646CFF?logo=vite&logoColor=white)
+![Recharts](https://img.shields.io/badge/Recharts-charts-8884d8?logo=chartdotjs&logoColor=white)
+![nginx](https://img.shields.io/badge/nginx-reverse%20proxy-009639?logo=nginx&logoColor=white)
+![JUnit5](https://img.shields.io/badge/JUnit-5-25A162?logo=junit5&logoColor=white)
+![Vitest](https://img.shields.io/badge/Vitest-tested-6E9F18?logo=vitest&logoColor=white)
 
 ---
 
@@ -18,14 +32,20 @@ It fetches cryptocurrency data from CoinGecko, processes it, stores it in a MySQ
 
 # ⚙️ Tech Stack
 
-* Java 17
-* Spring Boot 3
-* Spring Data JPA
-* MySQL
-* Docker & Docker Compose
-* Maven
+**Backend**
+* Java 17, Spring Boot 3.3, Spring Data JPA, Spring Boot Actuator, Lombok
+* MySQL 8, Maven (wrapper)
 * REST API (CoinGecko)
-* React + Vite + TypeScript (dashboard, see `dashboard/`)
+* JUnit 5, Mockito, AssertJ, H2 (tests)
+
+**Frontend** (`dashboard/`)
+* React 19, Vite, TypeScript
+* Recharts (charts), react-router-dom (routing)
+* Vitest, React Testing Library (tests)
+
+**Infrastructure**
+* Docker & Docker Compose
+* nginx (serves the dashboard, proxies `/api/*` to the backend)
 
 ---
 
@@ -91,6 +111,26 @@ dashboard                 → React + Vite + TypeScript frontend (see dashboard/
 4. Calculate price fluctuation vs. the previous stored record for that symbol
 5. Save into MySQL
 6. Save processed data
+
+```mermaid
+sequenceDiagram
+    participant S as CryptoScheduler
+    participant CG as CoinGecko API
+    participant Raw as RawDataService
+    participant M as CryptoMapper
+    participant F as PriceFluctuationService
+    participant DB as CryptoRepository (MySQL)
+    participant Proc as ProcessedDataService
+
+    S->>CG: GET /coins/markets
+    CG-->>S: JSON array (CryptoApiResponse[])
+    S->>Raw: save RAW NDJSON
+    S->>M: map DTO -> CryptoPrice entity
+    S->>F: compute % change vs. previous session per symbol
+    S->>DB: saveAll (dedup by symbol + event_time)
+    S->>Proc: save PROCESSED NDJSON
+    Note over S: One bad item or a DB error is logged and<br/>skipped — it never stops the whole ingestion cycle
+```
 
 ---
 
@@ -182,23 +222,24 @@ Defaults (override via `.env`, see above):
 
 ---
 
-# 📊 Example Table
+# 🗂️ Data Model
 
-```sql
-crypto_price
+```mermaid
+erDiagram
+    CRYPTO_PRICE {
+        bigint id PK
+        varchar symbol
+        decimal price "precision 24, scale 8"
+        decimal market_cap "precision 24, scale 8"
+        decimal volume "precision 24, scale 8"
+        datetime event_time "timestamp reported by CoinGecko"
+        datetime timestamp "when this row was ingested"
+        decimal price_fluctuation "% vs. previous record for this symbol; null if first-ever"
+    }
 ```
 
-Fields:
-
-* id
-* symbol
-* price
-* market_cap
-* volume
-* event_time
-* timestamp
-* price_fluctuation — % change vs. the previous stored record for the same symbol (`null` for a
-  symbol's first-ever record)
+A single table, `crypto_price`, with a `UNIQUE (symbol, event_time)` constraint — this is what lets
+the ingestion pipeline safely re-run without ever inserting the same data point twice.
 
 ---
 
@@ -307,7 +348,8 @@ builds fast — tests are expected to be run separately via `./mvnw test`.
 * REST API to query a coin's history and the ranking
 * Duplicate handling via DB constraints
 * File-based raw data storage
-* Dockerized environment
+* Interactive React dashboard: latest prices, price history chart, ranking
+* Dockerized environment (backend + MySQL + dashboard, one `docker-compose up`)
 * Clean architecture (layered)
 
 ---
@@ -332,9 +374,14 @@ builds fast — tests are expected to be run separately via `./mvnw test`.
 
 ---
 
-# 👨‍💻 Author
+# 🤝 Contributors
 
-Built by Iñaki Ramos Iturria as a **data engineering + backend learning project**.
+* **[Iñaki Ramos Iturria](https://github.com/akiramoss)** — project author, as a **data engineering
+  + backend learning project**.
+* **[Claude Code](https://claude.com/claude-code)** (Anthropic) — AI pair-programmer. Built the
+  dashboard end-to-end (bounded REST endpoints, React/Vite/TypeScript frontend, Docker/nginx
+  integration) and several backend fixes and refactors; see the commit history
+  (`Co-Authored-By: Claude Sonnet 5`) for specifics.
 
 ---
 
