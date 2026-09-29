@@ -120,6 +120,44 @@ class CryptoRepositoryTest {
     }
 
     @Test
+    void findBySymbolAndEventTimeBetweenOrderByEventTimeDesc_returnsOnlyRecordsInRange_newestFirst() {
+        // Arrange
+        repository.saveAndFlush(priceOf("BTC", LocalDateTime.of(2024, 1, 10, 0, 0)));
+        CryptoPrice inRangeLater = repository.saveAndFlush(priceOf("BTC", LocalDateTime.of(2024, 1, 20, 0, 0)));
+        CryptoPrice inRangeEarlier = repository.saveAndFlush(priceOf("BTC", LocalDateTime.of(2024, 1, 15, 0, 0)));
+        repository.saveAndFlush(priceOf("BTC", LocalDateTime.of(2024, 2, 1, 0, 0)));
+        repository.saveAndFlush(priceOf("ETH", LocalDateTime.of(2024, 1, 15, 0, 0)));
+
+        // Act
+        List<CryptoPrice> result = repository.findBySymbolAndEventTimeBetweenOrderByEventTimeDesc(
+                "BTC", LocalDateTime.of(2024, 1, 12, 0, 0), LocalDateTime.of(2024, 1, 25, 0, 0));
+
+        // Assert
+        assertThat(result).extracting(CryptoPrice::getId)
+                .containsExactly(inRangeLater.getId(), inRangeEarlier.getId());
+    }
+
+    @Test
+    void findLatestPerSymbol_returnsOneRecordPerSymbol_itsMostRecent() {
+        // Arrange
+        repository.saveAndFlush(priceOf("BTC", LocalDateTime.of(2024, 1, 15, 10, 30)));
+        CryptoPrice latestBtc = repository.saveAndFlush(priceOf("BTC", LocalDateTime.of(2024, 1, 16, 8, 0)));
+        CryptoPrice onlyEth = repository.saveAndFlush(priceOf("ETH", LocalDateTime.of(2024, 1, 10, 0, 0)));
+
+        // Act
+        List<CryptoPrice> result = repository.findLatestPerSymbol();
+
+        // Assert
+        assertThat(result).extracting(CryptoPrice::getId)
+                .containsExactlyInAnyOrder(latestBtc.getId(), onlyEth.getId());
+    }
+
+    @Test
+    void findLatestPerSymbol_returnsEmpty_whenNoRecordsExist() {
+        assertThat(repository.findLatestPerSymbol()).isEmpty();
+    }
+
+    @Test
     void aggregateFluctuationStatsBySymbol_countsTotalAndPositiveFluctuations_perSymbol() {
         // Arrange: BTC has 3 fluctuation records (2 positive, 1 negative); ETH has 1 (positive);
         // SOL has a record with a null fluctuation, which must be excluded entirely.

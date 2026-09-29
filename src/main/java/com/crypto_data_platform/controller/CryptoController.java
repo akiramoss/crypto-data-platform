@@ -4,7 +4,9 @@ import com.crypto_data_platform.domain.CryptoPrice;
 import com.crypto_data_platform.dto.CryptoPriceResponse;
 import com.crypto_data_platform.dto.CryptoRankingEntry;
 import com.crypto_data_platform.repository.CryptoRepository;
+import com.crypto_data_platform.service.CryptoPriceQueryService;
 import com.crypto_data_platform.service.CryptoRankingService;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -13,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Locale;
 
@@ -22,10 +25,21 @@ public class CryptoController {
 
     private final CryptoRepository repository;
     private final CryptoRankingService rankingService;
+    private final CryptoPriceQueryService priceQueryService;
 
-    public CryptoController(CryptoRepository repository, CryptoRankingService rankingService) {
+    public CryptoController(CryptoRepository repository, CryptoRankingService rankingService,
+                             CryptoPriceQueryService priceQueryService) {
         this.repository = repository;
         this.rankingService = rankingService;
+        this.priceQueryService = priceQueryService;
+    }
+
+    /**
+     * Última cotización conocida de cada symbol (para el resumen "latest prices" del dashboard).
+     */
+    @GetMapping("/latest")
+    public List<CryptoPriceResponse> getLatestPrices() {
+        return priceQueryService.getLatestPrices();
     }
 
     /**
@@ -39,6 +53,20 @@ public class CryptoController {
         // produce "pı", no "pi", lo que dejaría de encontrar datos guardados como "pi").
         List<CryptoPrice> entities = repository.findBySymbolOrderByEventTimeDesc(symbol.toLowerCase(Locale.ROOT));
         return entities.stream().map(CryptoPriceResponse::fromEntity).toList();
+    }
+
+    /**
+     * Histórico de precios de un symbol acotado a un rango de fechas, pensado para el gráfico
+     * del dashboard (a diferencia de {@link #getBySymbol}, que devuelve todo el histórico sin
+     * acotar). Si {@code from}/{@code to} se omiten, ver {@link CryptoPriceQueryService#getHistory}
+     * para los valores por defecto y el rango máximo permitido.
+     */
+    @GetMapping("/{symbol}/history")
+    public List<CryptoPriceResponse> getHistory(
+            @PathVariable String symbol,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime to) {
+        return priceQueryService.getHistory(symbol, from, to);
     }
 
     /**

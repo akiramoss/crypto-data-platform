@@ -1,8 +1,10 @@
 package com.crypto_data_platform.controller;
 
 import com.crypto_data_platform.domain.CryptoPrice;
+import com.crypto_data_platform.dto.CryptoPriceResponse;
 import com.crypto_data_platform.dto.CryptoRankingEntry;
 import com.crypto_data_platform.repository.CryptoRepository;
+import com.crypto_data_platform.service.CryptoPriceQueryService;
 import com.crypto_data_platform.service.CryptoRankingService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -43,6 +45,8 @@ class CryptoControllerTest {
     private CryptoRepository repository;
     @MockBean
     private CryptoRankingService rankingService;
+    @MockBean
+    private CryptoPriceQueryService priceQueryService;
 
     private Locale originalDefaultLocale;
 
@@ -97,6 +101,69 @@ class CryptoControllerTest {
         mockMvc.perform(get("/api/cryptos/doge"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", org.hamcrest.Matchers.hasSize(0)));
+    }
+
+    @Test
+    void getLatestPrices_returnsServiceResult() throws Exception {
+        when(priceQueryService.getLatestPrices()).thenReturn(List.of(
+                new CryptoPriceResponse("btc", BigDecimal.valueOf(66000.0), BigDecimal.valueOf(1_000_000.0),
+                        BigDecimal.valueOf(500.0), LocalDateTime.of(2024, 1, 15, 10, 30),
+                        LocalDateTime.of(2024, 1, 15, 10, 31), BigDecimal.valueOf(1.5))));
+
+        mockMvc.perform(get("/api/cryptos/latest"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", org.hamcrest.Matchers.hasSize(1)))
+                .andExpect(jsonPath("$[0].symbol").value("btc"));
+    }
+
+    @Test
+    void getHistory_forwardsSymbolAndDateRange_toService() throws Exception {
+        LocalDateTime from = LocalDateTime.of(2024, 1, 1, 0, 0);
+        LocalDateTime to = LocalDateTime.of(2024, 1, 31, 0, 0);
+        when(priceQueryService.getHistory("btc", from, to)).thenReturn(List.of());
+
+        mockMvc.perform(get("/api/cryptos/btc/history?from=2024-01-01T00:00:00&to=2024-01-31T00:00:00"))
+                .andExpect(status().isOk());
+
+        verify(priceQueryService).getHistory("btc", from, to);
+    }
+
+    @Test
+    void getHistory_forwardsNullFromAndTo_whenOmitted() throws Exception {
+        when(priceQueryService.getHistory(eq("btc"), org.mockito.ArgumentMatchers.isNull(),
+                org.mockito.ArgumentMatchers.isNull())).thenReturn(List.of());
+
+        mockMvc.perform(get("/api/cryptos/btc/history")).andExpect(status().isOk());
+
+        verify(priceQueryService).getHistory(eq("btc"), org.mockito.ArgumentMatchers.isNull(),
+                org.mockito.ArgumentMatchers.isNull());
+    }
+
+    @Test
+    void getHistory_returnsBadRequest_withConsistentErrorBody_whenServiceRejectsTheRange() throws Exception {
+        // CryptoPriceQueryService.getHistory throws IllegalArgumentException for an invalid range
+        // (e.g. from > to, or a range exceeding MAX_RANGE_DAYS); GlobalExceptionHandler must map
+        // that to a 400 with the shared ApiErrorResponse shape.
+        when(priceQueryService.getHistory(org.mockito.ArgumentMatchers.eq("btc"),
+                org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any()))
+                .thenThrow(new IllegalArgumentException("'from' must not be after 'to'"));
+
+        mockMvc.perform(get("/api/cryptos/btc/history?from=2024-02-01T00:00:00&to=2024-01-01T00:00:00"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.message").value("'from' must not be after 'to'"))
+                .andExpect(jsonPath("$.path").value("/api/cryptos/btc/history"));
+    }
+
+    @Test
+    void getHistory_returnsBadRequest_whenDateParamIsMalformed() throws Exception {
+        mockMvc.perform(get("/api/cryptos/btc/history?from=not-a-date"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400));
+
+        verify(priceQueryService, org.mockito.Mockito.never())
+                .getHistory(org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.any(),
+                        org.mockito.ArgumentMatchers.any());
     }
 
     @Test
