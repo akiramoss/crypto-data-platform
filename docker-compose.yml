@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
 
   mysql:
@@ -14,18 +12,27 @@ services:
       - "3307:3306"
     volumes:
       - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-root}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   app:
     build: .
     container_name: crypto-app
     depends_on:
-      - mysql
+      mysql:
+        condition: service_healthy
     ports:
       - "8080:8080"
     environment:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE:-crypto_db}
       SPRING_DATASOURCE_USERNAME: ${DB_USERNAME:-cryptouser}
       SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-crypto123}
+      COINGECKO_API_KEY: ${COINGECKO_API_KEY:-}
+    volumes:
+      - ./data:/app/data
 
 volumes:
   mysql_data:
