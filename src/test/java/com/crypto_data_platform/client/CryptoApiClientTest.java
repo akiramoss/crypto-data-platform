@@ -153,4 +153,18 @@ class CryptoApiClientTest {
 
         server.verify();
     }
+
+    @Test
+    void fetchCryptoData_sendsCustomUserAgent_toAvoidCloudFrontBotBlocking() {
+        // CoinGecko está tras CloudFront, que bloquea con 403 el User-Agent por defecto de
+        // HttpURLConnection (p.ej. "Java/17..."). Sin este header el pipeline entero falla.
+        CryptoApiClient client = clientWithApiKey("test-key");
+        server.expect(requestTo(EXPECTED_URL))
+                .andExpect(header("User-Agent", "crypto-data-platform/1.0"))
+                .andRespond(withSuccess("[]", MediaType.APPLICATION_JSON));
+
+        client.fetchCryptoData();
+
+        server.verify();
+    }
 }

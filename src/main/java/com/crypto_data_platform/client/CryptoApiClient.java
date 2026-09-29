@@ -15,6 +15,11 @@ public class CryptoApiClient {
 
     private static final String API_KEY_HEADER = "x-cg-demo-api-key";
 
+    // CoinGecko sirve su API pública tras CloudFront, que bloquea con 403 las peticiones cuyo
+    // User-Agent delata un cliente HTTP por defecto (p.ej. "Java/17...", el que pone
+    // HttpURLConnection si no se fija ninguno). Un User-Agent propio evita ese bloqueo de borde.
+    private static final String USER_AGENT_HEADER = "crypto-data-platform/1.0";
+
     private static final Logger logger = LoggerFactory.getLogger(CryptoApiClient.class);
 
     private final RestTemplate restTemplate;
@@ -53,6 +58,7 @@ public class CryptoApiClient {
 
     private HttpHeaders buildHeaders() {
         HttpHeaders headers = new HttpHeaders();
+        headers.set(HttpHeaders.USER_AGENT, USER_AGENT_HEADER);
         String apiKey = config.getApiKey();
         if (apiKey != null && !apiKey.isBlank()) {
             headers.set(API_KEY_HEADER, apiKey);
