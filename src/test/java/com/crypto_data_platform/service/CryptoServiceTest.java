@@ -12,6 +12,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.dao.DataAccessResourceFailureException;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.ResourceAccessException;
 
 import java.util.List;
@@ -261,6 +263,22 @@ class CryptoServiceTest {
         assertThatCode(() -> cryptoService.fetchAndSaveCryptoData()).doesNotThrowAnyException();
 
         // Assert: nothing downstream of the failed API call is ever invoked.
+        verifyNoInteractions(rawDataService, repository, processedDataService);
+    }
+
+    @Test
+    void fetchAndSaveCryptoData_apiClientThrowsHttpStatusError_noDownstreamCollaboratorIsCalled() {
+        // Arrange: e.g. a 429 rate-limit response from CoinGecko, a subtype of RestClientException
+        // that CryptoService now logs distinctly (status code + body) instead of via the generic
+        // RestClientException branch. Behaviour towards downstream collaborators is unchanged.
+        when(apiClient.fetchCryptoData())
+                .thenThrow(HttpClientErrorException.create(
+                        HttpStatus.TOO_MANY_REQUESTS, "Too Many Requests", null, null, null));
+
+        // Act
+        assertThatCode(() -> cryptoService.fetchAndSaveCryptoData()).doesNotThrowAnyException();
+
+        // Assert
         verifyNoInteractions(rawDataService, repository, processedDataService);
     }
 }

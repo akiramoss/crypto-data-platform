@@ -7,6 +7,7 @@ import com.crypto_data_platform.mapper.CryptoMapper;
 import com.crypto_data_platform.repository.CryptoRepository;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestClientException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,6 +54,12 @@ public class CryptoService {
 
             logger.info("Data ingestion completed");
 
+        } catch (HttpStatusCodeException e) {
+            // Distinguimos el status code (p.ej. 429 de rate limit vs. un 5xx de CoinGecko) porque
+            // un catch genérico de RestClientException lo enmascara y hace imposible diferenciar
+            // "nos están limitando" de "el servicio está caído" solo mirando los logs.
+            logger.error("CoinGecko HTTP error {} during ingestion: {}",
+                    e.getStatusCode(), e.getResponseBodyAsString());
         } catch (RestClientException e) {
             logger.error("ERROR during crypto ingestion", e);
         }
