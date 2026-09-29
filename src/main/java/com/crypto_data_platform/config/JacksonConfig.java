@@ -16,6 +16,9 @@ public class JacksonConfig {
         // Sin esto, LocalDateTime se serializa como array numérico [year, month, day, ...]
         // en vez de una cadena ISO-8601 legible.
         mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        // Sin esto, un BigDecimal con muchos decimales (p.ej. el precio de una moneda de muy
+        // bajo valor) podría serializarse en notación científica (1.23E-8) en vez de en plano.
+        mapper.enable(SerializationFeature.WRITE_BIGDECIMAL_AS_PLAIN);
         return mapper;
     }
 }

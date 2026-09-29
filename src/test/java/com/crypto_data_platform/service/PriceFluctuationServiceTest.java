@@ -8,12 +8,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.offset;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
@@ -38,7 +38,7 @@ class PriceFluctuationServiceTest {
     private static CryptoPrice priceOf(String symbol, Double price) {
         CryptoPrice entity = new CryptoPrice();
         entity.setSymbol(symbol);
-        entity.setPrice(price);
+        entity.setPrice(price == null ? null : BigDecimal.valueOf(price));
         entity.setEventTime(LocalDateTime.of(2024, 1, 15, 10, 30));
         return entity;
     }
@@ -62,7 +62,7 @@ class PriceFluctuationServiceTest {
         fluctuationService.applyFluctuations(List.of(entity));
 
         // (55000 - 50000) / 50000 * 100 = 10%
-        assertThat(entity.getPriceFluctuation()).isCloseTo(10.0, offset(0.0001));
+        assertThat(entity.getPriceFluctuation()).isEqualByComparingTo("10");
     }
 
     @Test
@@ -74,7 +74,7 @@ class PriceFluctuationServiceTest {
         fluctuationService.applyFluctuations(List.of(entity));
 
         // (3600 - 4000) / 4000 * 100 = -10%
-        assertThat(entity.getPriceFluctuation()).isCloseTo(-10.0, offset(0.0001));
+        assertThat(entity.getPriceFluctuation()).isEqualByComparingTo("-10");
     }
 
     @Test
@@ -87,8 +87,8 @@ class PriceFluctuationServiceTest {
 
         fluctuationService.applyFluctuations(List.of(first, second));
 
-        assertThat(first.getPriceFluctuation()).isCloseTo(10.0, offset(0.0001));
-        assertThat(second.getPriceFluctuation()).isCloseTo(10.0, offset(0.0001));
+        assertThat(first.getPriceFluctuation()).isEqualByComparingTo("10");
+        assertThat(second.getPriceFluctuation()).isEqualByComparingTo("10");
     }
 
     @Test
@@ -124,7 +124,7 @@ class PriceFluctuationServiceTest {
 
         fluctuationService.applyFluctuations(List.of(entity));
 
-        assertThat(entity.getPriceFluctuation()).isNotNull().isCloseTo(0.0, offset(0.0001));
+        assertThat(entity.getPriceFluctuation()).isNotNull().isEqualByComparingTo(BigDecimal.ZERO);
     }
 
     @Test
@@ -140,7 +140,7 @@ class PriceFluctuationServiceTest {
         fluctuationService.applyFluctuations(List.of(firstWithNullPrice, second));
 
         assertThat(firstWithNullPrice.getPriceFluctuation()).isNull();
-        assertThat(second.getPriceFluctuation()).isCloseTo(10.0, offset(0.0001));
+        assertThat(second.getPriceFluctuation()).isEqualByComparingTo("10");
     }
 
     @Test
@@ -154,7 +154,7 @@ class PriceFluctuationServiceTest {
 
         fluctuationService.applyFluctuations(List.of(btc, eth));
 
-        assertThat(btc.getPriceFluctuation()).isCloseTo(10.0, offset(0.0001));
-        assertThat(eth.getPriceFluctuation()).isCloseTo(-5.0, offset(0.0001));
+        assertThat(btc.getPriceFluctuation()).isEqualByComparingTo("10");
+        assertThat(eth.getPriceFluctuation()).isEqualByComparingTo("-5");
     }
 }

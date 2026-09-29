@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
@@ -71,9 +72,9 @@ class ProcessedDataServiceTest {
     private CryptoPrice entity(String symbol, double price, LocalDateTime eventTime) {
         CryptoPrice entity = new CryptoPrice();
         entity.setSymbol(symbol);
-        entity.setPrice(price);
-        entity.setMarketCap(price * 1000);
-        entity.setVolume(price * 10);
+        entity.setPrice(BigDecimal.valueOf(price));
+        entity.setMarketCap(BigDecimal.valueOf(price * 1000));
+        entity.setVolume(BigDecimal.valueOf(price * 10));
         entity.setEventTime(eventTime);
         entity.setTimestamp(LocalDateTime.now());
         return entity;

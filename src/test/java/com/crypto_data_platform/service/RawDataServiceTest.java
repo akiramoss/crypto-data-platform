@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashSet;
@@ -70,9 +71,9 @@ class RawDataServiceTest {
         dto.setId(symbol.toLowerCase());
         dto.setSymbol(symbol);
         dto.setName(symbol);
-        dto.setCurrentPrice(price);
-        dto.setMarketCap(price * 1000);
-        dto.setTotalVolume(price * 10);
+        dto.setCurrentPrice(BigDecimal.valueOf(price));
+        dto.setMarketCap(BigDecimal.valueOf(price * 1000));
+        dto.setTotalVolume(BigDecimal.valueOf(price * 10));
         dto.setLastUpdated("2024-01-15T10:30:00.000Z");
         return dto;
     }

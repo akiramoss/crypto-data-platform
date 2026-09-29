@@ -7,6 +7,7 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.context.ActiveProfiles;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -36,9 +37,9 @@ class CryptoRepositoryTest {
     private static CryptoPrice priceOf(String symbol, LocalDateTime eventTime) {
         CryptoPrice entity = new CryptoPrice();
         entity.setSymbol(symbol);
-        entity.setPrice(100.0);
-        entity.setMarketCap(1000.0);
-        entity.setVolume(10.0);
+        entity.setPrice(BigDecimal.valueOf(100.0));
+        entity.setMarketCap(BigDecimal.valueOf(1000.0));
+        entity.setVolume(BigDecimal.valueOf(10.0));
         entity.setEventTime(eventTime);
         entity.setTimestamp(LocalDateTime.now());
         return entity;
@@ -201,7 +202,7 @@ class CryptoRepositoryTest {
 
     private static CryptoPrice fluctuatingPriceOf(String symbol, LocalDateTime eventTime, Double fluctuation) {
         CryptoPrice entity = priceOf(symbol, eventTime);
-        entity.setPriceFluctuation(fluctuation);
+        entity.setPriceFluctuation(fluctuation == null ? null : BigDecimal.valueOf(fluctuation));
         return entity;
     }
 }

@@ -3,6 +3,8 @@ package com.crypto_data_platform.dto;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
+import java.math.BigDecimal;
+
 @Data
 public class CryptoApiResponse {
 
@@ -11,13 +13,13 @@ public class CryptoApiResponse {
     private String name;
 
     @JsonProperty("current_price")
-    private Double currentPrice;
+    private BigDecimal currentPrice;
 
     @JsonProperty("market_cap")
-    private Double marketCap;
+    private BigDecimal marketCap;
 
     @JsonProperty("total_volume")
-    private Double totalVolume;
+    private BigDecimal totalVolume;
 
     @JsonProperty("last_updated")
     private String lastUpdated;

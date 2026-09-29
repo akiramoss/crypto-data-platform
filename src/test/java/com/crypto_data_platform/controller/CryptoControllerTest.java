@@ -14,6 +14,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Locale;
@@ -60,12 +61,12 @@ class CryptoControllerTest {
     private static CryptoPrice priceOf(String symbol, double price, double fluctuation) {
         CryptoPrice entity = new CryptoPrice();
         entity.setSymbol(symbol);
-        entity.setPrice(price);
-        entity.setMarketCap(price * 1000);
-        entity.setVolume(price * 10);
+        entity.setPrice(BigDecimal.valueOf(price));
+        entity.setMarketCap(BigDecimal.valueOf(price * 1000));
+        entity.setVolume(BigDecimal.valueOf(price * 10));
         entity.setEventTime(LocalDateTime.of(2024, 1, 15, 10, 30));
         entity.setTimestamp(LocalDateTime.of(2024, 1, 15, 10, 31));
-        entity.setPriceFluctuation(fluctuation);
+        entity.setPriceFluctuation(BigDecimal.valueOf(fluctuation));
         return entity;
     }
 

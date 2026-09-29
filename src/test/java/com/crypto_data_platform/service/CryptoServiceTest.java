@@ -16,6 +16,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.ResourceAccessException;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -64,9 +65,9 @@ class CryptoServiceTest {
         dto.setId(symbol.toLowerCase());
         dto.setSymbol(symbol);
         dto.setName(symbol);
-        dto.setCurrentPrice(price);
-        dto.setMarketCap(price * 1000);
-        dto.setTotalVolume(price * 10);
+        dto.setCurrentPrice(BigDecimal.valueOf(price));
+        dto.setMarketCap(BigDecimal.valueOf(price * 1000));
+        dto.setTotalVolume(BigDecimal.valueOf(price * 10));
         dto.setLastUpdated("2024-01-15T10:30:00.000Z");
         return dto;
     }
@@ -89,7 +90,7 @@ class CryptoServiceTest {
         List<CryptoPrice> persisted = captor.getValue();
         assertThat(persisted).hasSize(2);
         assertThat(persisted.get(0).getSymbol()).isEqualTo("BTC");
-        assertThat(persisted.get(0).getPrice()).isEqualTo(65000.5);
+        assertThat(persisted.get(0).getPrice()).isEqualByComparingTo("65000.5");
         assertThat(persisted.get(1).getSymbol()).isEqualTo("ETH");
 
         verify(processedDataService).saveProcessedData(persisted);

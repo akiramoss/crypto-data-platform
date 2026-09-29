@@ -2,6 +2,7 @@ package com.crypto_data_platform.dto;
 
 import com.crypto_data_platform.domain.CryptoPrice;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
@@ -10,12 +11,12 @@ import java.time.LocalDateTime;
  */
 public record CryptoPriceResponse(
         String symbol,
-        Double price,
-        Double marketCap,
-        Double volume,
+        BigDecimal price,
+        BigDecimal marketCap,
+        BigDecimal volume,
         LocalDateTime eventTime,
         LocalDateTime timestamp,
-        Double priceFluctuation
+        BigDecimal priceFluctuation
 ) {
 
     public static CryptoPriceResponse fromEntity(CryptoPrice entity) {

@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
@@ -23,9 +24,17 @@ public class CryptoPrice {
     private Long id;
 
     private String symbol;
-    private Double price;
-    private Double marketCap;
-    private Double volume;
+
+    // precision/scale explícitos: dejar que Hibernate infiera un DOUBLE/FLOAT a partir de
+    // BigDecimal reintroduciría el mismo redondeo binario que este tipo pretende evitar.
+    @Column(precision = 24, scale = 8)
+    private BigDecimal price;
+
+    @Column(precision = 24, scale = 8)
+    private BigDecimal marketCap;
+
+    @Column(precision = 24, scale = 8)
+    private BigDecimal volume;
 
     private LocalDateTime eventTime;
     private LocalDateTime timestamp;
@@ -35,5 +44,6 @@ public class CryptoPrice {
      * mismo symbol (calculada por {@link com.crypto_data_platform.service.PriceFluctuationService}).
      * {@code null} si este es el primer registro conocido de ese symbol.
      */
-    private Double priceFluctuation;
+    @Column(precision = 12, scale = 4)
+    private BigDecimal priceFluctuation;
 }

@@ -4,6 +4,7 @@ import com.crypto_data_platform.domain.CryptoPrice;
 import com.crypto_data_platform.dto.CryptoApiResponse;
 import org.junit.jupiter.api.Test;
 
+import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
@@ -23,9 +24,9 @@ class CryptoMapperTest {
         dto.setId("bitcoin");
         dto.setSymbol("btc");
         dto.setName("Bitcoin");
-        dto.setCurrentPrice(65000.5);
-        dto.setMarketCap(1_200_000_000.0);
-        dto.setTotalVolume(50_000_000.0);
+        dto.setCurrentPrice(BigDecimal.valueOf(65000.5));
+        dto.setMarketCap(BigDecimal.valueOf(1_200_000_000.0));
+        dto.setTotalVolume(BigDecimal.valueOf(50_000_000.0));
         dto.setLastUpdated("2024-01-15T10:30:00.000Z");
         return dto;
     }
@@ -40,9 +41,9 @@ class CryptoMapperTest {
 
         // Assert
         assertThat(entity.getSymbol()).isEqualTo("btc");
-        assertThat(entity.getPrice()).isEqualTo(65000.5);
-        assertThat(entity.getMarketCap()).isEqualTo(1_200_000_000.0);
-        assertThat(entity.getVolume()).isEqualTo(50_000_000.0);
+        assertThat(entity.getPrice()).isEqualByComparingTo("65000.5");
+        assertThat(entity.getMarketCap()).isEqualByComparingTo("1200000000.0");
+        assertThat(entity.getVolume()).isEqualByComparingTo("50000000.0");
         assertThat(entity.getEventTime()).isEqualTo(LocalDateTime.of(2024, 1, 15, 10, 30, 0));
     }
 
@@ -139,25 +140,29 @@ class CryptoMapperTest {
         // numeric fields. A negative current_price (e.g. a corrupt/erroneous upstream payload,
         // since real crypto prices are never negative) is copied through as-is, not rejected.
         CryptoApiResponse dto = validDto();
-        dto.setCurrentPrice(-100.0);
+        dto.setCurrentPrice(BigDecimal.valueOf(-100.0));
 
         CryptoPrice entity = mapper.toEntity(dto);
 
-        assertThat(entity.getPrice()).isEqualTo(-100.0);
+        assertThat(entity.getPrice()).isEqualByComparingTo("-100.0");
     }
 
     @Test
     void toEntity_keepsExtremeMarketCapAndVolume_withoutOverflowOrTruncation() {
-        // Arrange: Double.MAX_VALUE and a very small (but non-zero) positive value, to check
-        // there is no silent overflow/underflow/truncation across the DTO -> entity copy.
+        // Arrange: an arbitrarily large value and a very small (but non-zero) positive value, to
+        // check there is no silent overflow/underflow/truncation across the DTO -> entity copy.
+        // Unlike double, BigDecimal has no fixed max/min magnitude, so this also documents that
+        // the migration away from double actually buys arbitrary precision, not just less rounding.
+        BigDecimal veryLargeMarketCap = new BigDecimal("123456789012345678901234567890.12345678");
+        BigDecimal verySmallVolume = new BigDecimal("0.00000001");
         CryptoApiResponse dto = validDto();
-        dto.setMarketCap(Double.MAX_VALUE);
-        dto.setTotalVolume(Double.MIN_VALUE);
+        dto.setMarketCap(veryLargeMarketCap);
+        dto.setTotalVolume(verySmallVolume);
 
         CryptoPrice entity = mapper.toEntity(dto);
 
-        assertThat(entity.getMarketCap()).isEqualTo(Double.MAX_VALUE);
-        assertThat(entity.getVolume()).isEqualTo(Double.MIN_VALUE);
+        assertThat(entity.getMarketCap()).isEqualByComparingTo(veryLargeMarketCap);
+        assertThat(entity.getVolume()).isEqualByComparingTo(verySmallVolume);
     }
 
     @Test
