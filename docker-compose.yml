@@ -34,5 +34,14 @@ services:
     volumes:
       - ./data:/app/data
 
+  dashboard:
+    build:
+      context: ./dashboard
+    container_name: crypto-dashboard
+    depends_on:
+      - app
+    ports:
+      - "5173:80"
+
 volumes:
   mysql_data:

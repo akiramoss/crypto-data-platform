@@ -13,7 +13,10 @@ export class ApiError extends Error {
 }
 
 async function get<T>(path: string): Promise<T> {
-  if (!BASE_URL) {
+  // An empty string (set at Docker build time) means "same origin": nginx serves the app and
+  // proxies /api/* to the backend, so requests are relative. Only a truly unset env var (local
+  // dev without a .env file) is a misconfiguration.
+  if (BASE_URL === undefined) {
     throw new ApiError('VITE_API_BASE_URL is not configured', 0)
   }
 
