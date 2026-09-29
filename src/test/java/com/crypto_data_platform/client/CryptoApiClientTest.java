@@ -155,6 +155,37 @@ class CryptoApiClientTest {
     }
 
     @Test
+    void fetchCryptoData_ignoresUnknownFields_inRealisticCoinGeckoResponse() {
+        // Regression test: the real /coins/markets response has 25+ fields, but CryptoApiResponse
+        // only maps 7. JacksonConfig's ObjectMapper must have FAIL_ON_UNKNOWN_PROPERTIES disabled,
+        // otherwise this deserialization throws and the ingestion pipeline silently saves nothing.
+        CryptoApiClient client = clientWithApiKey("test-key");
+        String body = "["
+                + "{\"id\":\"bitcoin\",\"symbol\":\"btc\",\"name\":\"Bitcoin\","
+                + "\"image\":\"https://example.test/btc.png\","
+                + "\"current_price\":65000.5,\"market_cap\":1200000000,\"market_cap_rank\":1,"
+                + "\"fully_diluted_valuation\":1300000000,\"total_volume\":50000000,"
+                + "\"high_24h\":66000.0,\"low_24h\":64000.0,\"price_change_24h\":500.0,"
+                + "\"price_change_percentage_24h\":0.8,\"market_cap_change_24h\":10000000,"
+                + "\"market_cap_change_percentage_24h\":0.9,\"circulating_supply\":19000000,"
+                + "\"total_supply\":21000000,\"max_supply\":21000000,\"ath\":69000.0,"
+                + "\"ath_change_percentage\":-5.8,\"ath_date\":\"2021-11-10T14:24:11.849Z\","
+                + "\"atl\":67.81,\"atl_change_percentage\":95000.0,"
+                + "\"atl_date\":\"2013-07-06T00:00:00.000Z\",\"roi\":null,"
+                + "\"last_updated\":\"2024-01-15T10:30:00.000Z\"}"
+                + "]";
+        server.expect(requestTo(EXPECTED_URL))
+                .andRespond(withSuccess(body, MediaType.APPLICATION_JSON));
+
+        CryptoApiResponse[] result = client.fetchCryptoData();
+
+        assertThat(result).hasSize(1);
+        assertThat(result[0].getSymbol()).isEqualTo("btc");
+        assertThat(result[0].getCurrentPrice()).isEqualByComparingTo("65000.5");
+        server.verify();
+    }
+
+    @Test
     void fetchCryptoData_sendsCustomUserAgent_toAvoidCloudFrontBotBlocking() {
         // CoinGecko está tras CloudFront, que bloquea con 403 el User-Agent por defecto de
         // HttpURLConnection (p.ej. "Java/17..."). Sin este header el pipeline entero falla.

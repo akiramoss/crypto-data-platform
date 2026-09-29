@@ -131,6 +131,17 @@ class CryptoControllerTest {
     }
 
     @Test
+    void getRanking_returnsBadRequest_whenMinSamplesIsNegative() throws Exception {
+        // Regression test: CryptoController.getRanking now validates `minSamples` before calling
+        // CryptoRankingService.getTopPerformers. A negative minSamples must be rejected with a
+        // clean 400 Bad Request, and the service must never even be invoked.
+        mockMvc.perform(get("/api/cryptos/ranking?minSamples=-5"))
+                .andExpect(status().isBadRequest());
+
+        verify(rankingService, org.mockito.Mockito.never()).getTopPerformers(anyInt(), anyInt());
+    }
+
+    @Test
     void getBySymbol_lowercasesCorrectly_regardlessOfDefaultLocale() throws Exception {
         // Regression test: CryptoController.getBySymbol uses Locale.ROOT to lowercase the symbol,
         // avoiding the "Turkish-I problem" where "PI".toLowerCase() under the Turkish locale

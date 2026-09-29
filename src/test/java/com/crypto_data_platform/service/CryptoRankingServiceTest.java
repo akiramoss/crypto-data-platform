@@ -138,10 +138,13 @@ class CryptoRankingServiceTest {
 
     @Test
     void getTopPerformers_includesAllSymbols_whenMinSamplesIsZeroOrNegative() {
-        // minSamples <= 0 is accepted without validation: every symbol with at least one recorded
-        // fluctuation passes the `totalCount >= minSamples` filter. Documented as current behavior,
-        // not asserted as a bug (no crash occurs), but worth locking in since it's an unvalidated
-        // input path shared with the REST layer (?minSamples=-5).
+        // minSamples <= 0 is accepted without validation at the service level: every symbol with
+        // at least one recorded fluctuation passes the `totalCount >= minSamples` filter. A
+        // negative minSamples is now rejected earlier, at the REST boundary (CryptoController
+        // #getRanking returns 400 before ever calling this method; see
+        // CryptoControllerTest#getRanking_returnsBadRequest_whenMinSamplesIsNegative). This test
+        // documents that the service itself still trusts its caller, per the project's "validate
+        // only at system boundaries" convention.
         when(repository.aggregateFluctuationStatsBySymbol()).thenReturn(List.of(
                 new Stats("btc", 1, 1)
         ));

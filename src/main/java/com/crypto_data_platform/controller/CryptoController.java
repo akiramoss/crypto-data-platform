@@ -56,6 +56,12 @@ public class CryptoController {
         if (limit < 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "limit must not be negative");
         }
+        // Un minSamples negativo no tiene sentido semántico y, sin validar, deja pasar a todos los
+        // symbols (con >= 0 muestras), contradiciendo el propósito documentado de filtrar por
+        // histórico mínimo.
+        if (minSamples < 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "minSamples must not be negative");
+        }
         return rankingService.getTopPerformers(minSamples, limit);
     }
 }
