@@ -5,6 +5,7 @@ import { EmptyState } from '../components/EmptyState'
 import { ErrorState } from '../components/ErrorState'
 import { LoadingState } from '../components/LoadingState'
 import { PriceHistoryChart } from '../components/PriceHistoryChart'
+import { DASHBOARD_REFRESH_INTERVAL_MS } from '../config'
 import { useAsync } from '../hooks/useAsync'
 
 const RANGE_OPTIONS = [
@@ -18,7 +19,7 @@ export function HistoryPage() {
   const navigate = useNavigate()
   const [rangeDays, setRangeDays] = useState<number>(30)
 
-  const { data: latestPrices } = useAsync(getLatestPrices, [])
+  const { data: latestPrices } = useAsync(getLatestPrices, [], DASHBOARD_REFRESH_INTERVAL_MS)
   const availableSymbols = useMemo(() => (latestPrices ?? []).map((p) => p.symbol), [latestPrices])
 
   // Fall back to the first known symbol once the overview data has loaded, if none was chosen.
@@ -34,6 +35,7 @@ export function HistoryPage() {
   const { data: history, loading, error, reload } = useAsync(
     () => (selectedSymbol ? getPriceHistory(selectedSymbol, from, to) : Promise.resolve([])),
     [selectedSymbol, from, to],
+    DASHBOARD_REFRESH_INTERVAL_MS,
   )
 
   return (

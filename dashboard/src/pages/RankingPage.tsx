@@ -4,6 +4,7 @@ import { EmptyState } from '../components/EmptyState'
 import { ErrorState } from '../components/ErrorState'
 import { LoadingState } from '../components/LoadingState'
 import { RankingTable } from '../components/RankingTable'
+import { DASHBOARD_REFRESH_INTERVAL_MS } from '../config'
 import { useAsync } from '../hooks/useAsync'
 
 const DEFAULT_MIN_SAMPLES = 3
@@ -13,7 +14,11 @@ export function RankingPage() {
   const [minSamples, setMinSamples] = useState(DEFAULT_MIN_SAMPLES)
   const [limit, setLimit] = useState(DEFAULT_LIMIT)
 
-  const { data, loading, error, reload } = useAsync(() => getRanking(minSamples, limit), [minSamples, limit])
+  const { data, loading, error, reload } = useAsync(
+    () => getRanking(minSamples, limit),
+    [minSamples, limit],
+    DASHBOARD_REFRESH_INTERVAL_MS,
+  )
 
   return (
     <section>
